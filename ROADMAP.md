@@ -28,18 +28,22 @@ dependencias, pruebas, CI, backend ni código reutilizable.
 
 ## Fases
 
-### Fase 1 — MVP navegable y verificable (en curso)
+### Fase 1 — MVP navegable y verificable (completada como base funcional)
 
-- [ ] Proyecto Expo/React Native ejecutable en iPhone, Android y web.
-- [ ] Onboarding accesible y flujo lineal de cinco pasos.
-- [ ] Escaneo real con cámara, guía visual, permiso y progreso.
-- [ ] Reconstrucción de habitación mediante un adaptador desacoplado.
-- [ ] Modelo tipado de cocina y validación de medidas.
-- [ ] Generación de tres propuestas distintas.
-- [ ] Selección, personalización simple y precio en tiempo real.
-- [ ] Persistencia local del proyecto.
-- [ ] Pruebas unitarias del modelo, diseños y precios.
-- [ ] CI con typecheck y tests.
+- [x] Proyecto Expo/React Native ejecutable en iPhone, Android y web.
+- [x] Onboarding accesible y flujo lineal de cinco pasos.
+- [x] Escaneo real con cámara, guía visual, permiso y progreso.
+- [x] Reconstrucción de habitación mediante un servicio desacoplado.
+- [x] Modelo tipado de cocina y validación básica de captura.
+- [x] Generación de tres propuestas distintas.
+- [x] Selección, personalización simple y precio en tiempo real.
+- [x] Persistencia local del proyecto.
+- [x] Pruebas unitarias del modelo, diseños y precios.
+- [x] CI con typecheck, tests y exportación web.
+
+> La reconstrucción actual crea geometría aproximada de demostración tras una
+> captura real. La medición espacial nativa está explícitamente en Fase 2 y no
+> debe interpretarse como precisión apta para compras o construcción.
 
 ### Fase 2 — Reconstrucción espacial nativa
 
