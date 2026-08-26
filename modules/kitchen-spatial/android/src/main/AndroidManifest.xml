@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <!-- AR Optional: Kitchen AI keeps the guided-camera fallback on every device. -->
+    <meta-data android:name="com.google.ar.core" android:value="optional" />
+  </application>
+</manifest>

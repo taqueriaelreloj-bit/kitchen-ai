@@ -33,7 +33,7 @@ function Home({ saved, start, resume }: { saved: boolean; start: () => void; res
     <View style={s.flow}>{['1  Escanee su cocina', '2  Elija un diseño', '3  Vea el precio'].map(x => <Text key={x} style={s.flowItem}>{x}</Text>)}</View>
     <PrimaryButton label="Escanear mi cocina" onPress={start} />
     {saved && <Pressable onPress={resume} style={s.resume}><Text style={s.resumeText}>Continuar mi proyecto guardado</Text></Pressable>}
-    <Text style={s.privacy}>🔒 Sus fotos permanecen privadas en este dispositivo durante el MVP.</Text>
+    <Text style={s.privacy}>🔒 Sus fotos permanecen privadas en este dispositivo durante el MVP. En Android, el escaneo espacial opcional usa Google Play Services for AR (ARCore), sujeto a la Política de Privacidad de Google.</Text>
   </ScrollView></Screen>;
 }
 

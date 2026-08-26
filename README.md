@@ -35,3 +35,7 @@ El MVP captura cuatro vistas reales con la cámara y completa todo el recorrido
 del producto. La reconstrucción geométrica y las propuestas se implementan por
 ahora con servicios locales deterministas: son contratos funcionales que serán
 reemplazados por RoomPlan/ARCore y un backend multimodal en las siguientes fases.
+
+La base nativa está en `modules/kitchen-spatial`: detecta soporte RoomPlan/LiDAR
+en Apple y ARCore/Depth en Android, conserva cámara guiada como fallback y compila
+en un development build real. Consulta `docs/ANDROID_SETUP.md` para reproducirlo.

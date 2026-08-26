@@ -49,6 +49,8 @@ dependencias, pruebas, CI, backend ni código reutilizable.
 
 - [ ] RoomPlan en dispositivos Apple con LiDAR.
 - [ ] ARCore Depth/Scene Semantics en Android compatible.
+- [x] Puente nativo Expo Modules con detección RoomPlan/ARCore y fallback.
+- [x] Toolchain Android reproducible y APK de desarrollo compilado.
 - [ ] Captura fotogramétrica como fallback universal.
 - [ ] Detección de muros, puertas, ventanas, tomas y plomería.
 - [x] Editor de medidas asistido y control de calidad del escaneo.

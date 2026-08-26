@@ -1,0 +1,9 @@
+{
+  "platforms": ["android", "apple"],
+  "apple": {
+    "modules": ["KitchenSpatialModule"]
+  },
+  "android": {
+    "modules": ["com.taqueriaelreloj.kitchenspatial.KitchenSpatialModule"]
+  }
+}
