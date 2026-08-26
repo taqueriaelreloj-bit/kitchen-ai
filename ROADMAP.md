@@ -51,7 +51,7 @@ dependencias, pruebas, CI, backend ni código reutilizable.
 - [ ] ARCore Depth/Scene Semantics en Android compatible.
 - [ ] Captura fotogramétrica como fallback universal.
 - [ ] Detección de muros, puertas, ventanas, tomas y plomería.
-- [ ] Editor de medidas asistido y control de calidad del escaneo.
+- [x] Editor de medidas asistido y control de calidad del escaneo.
 
 ### Fase 3 — Diseños IA realistas
 
