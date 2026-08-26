@@ -1,5 +1,6 @@
 export type ScanPhoto = { uri: string; angle: number; capturedAt: string };
-export type RoomModel = { id: string; widthM: number; lengthM: number; heightM: number; layout: 'L' | 'U' | 'galley' | 'single-wall'; openings: { type: 'door' | 'window'; wall: number; widthM: number }[]; confidence: number; photos: ScanPhoto[] };
+export type CaptureSource = 'guided-camera' | 'roomplan' | 'arcore-depth';
+export type RoomModel = { id: string; widthM: number; lengthM: number; heightM: number; layout: 'L' | 'U' | 'galley' | 'single-wall'; openings: { type: 'door' | 'window'; wall: number; widthM: number }[]; confidence: number; source: CaptureSource; photos: ScanPhoto[] };
 export type KitchenStyle = 'warm' | 'modern' | 'classic';
 export type CabinetColor = 'cream' | 'white' | 'navy' | 'wood';
 export type Countertop = 'quartz' | 'granite' | 'laminate';
