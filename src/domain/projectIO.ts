@@ -1,5 +1,5 @@
 import { countertopData, islandData } from './countertops';
-import { EditorObject, EditorProject, migrateProject } from './editor';
+import { EditorObject, EditorProject, migrateProject, normalizeCabinetHardware } from './editor';
 import { isLighting, lightingData } from './lighting';
 import { openingData } from './openings';
 
@@ -40,6 +40,17 @@ export function summarizeProject(project: EditorProject): ProjectExportSummary {
   };
 }
 
+function hardwareNote(object: EditorObject) {
+  if (!object.hardware) return '';
+  const hardware = normalizeCabinetHardware(object.hardware);
+  if (hardware.style === 'No Hardware') return '';
+  const size = hardware.size === 'Custom Size' ? `${hardware.customSizeIn ?? 5}in custom` : hardware.size;
+  const position = hardware.position === 'Custom Position'
+    ? `Custom Position X ${hardware.customOffsetXIn ?? 0}in / Y ${hardware.customOffsetYIn ?? 0}in`
+    : hardware.position;
+  return `${hardware.style}, ${size}, ${hardware.finishId}, ${position}`;
+}
+
 export type ScheduleRow = { id:string; category:string; name:string; widthIn:number; heightIn:number; depthIn:number; material:string; finish:string; notes:string; };
 export function projectSchedule(project: EditorProject): ScheduleRow[] {
   return project.objects.map(object => {
@@ -49,7 +60,7 @@ export function projectSchedule(project: EditorProject): ScheduleRow[] {
     const light = isLighting(object) ? lightingData(object) : undefined;
     const notes = [
       object.toeKick?.enabled ? `Toe kick ${object.toeKick.heightIn}in high / ${object.toeKick.recessIn}in recess` : '',
-      object.hardware && object.hardware.style !== 'No Hardware' ? `${object.hardware.style}, ${object.hardware.size}, ${object.hardware.finishId}` : '',
+      hardwareNote(object),
       opening?.parentWallId ? `Wall ${opening.parentWallId}, offset ${opening.wallOffsetIn ?? 0}in` : '',
       counter ? `${counter.edgeProfile}, ${counter.thicknessIn}in slab${counter.sinkCutout ? ', sink cutout' : ''}${counter.cooktopCutout ? ', cooktop cutout' : ''}` : '',
       island ? `${island.seatingCount} seats${island.dishwasher ? ', dishwasher' : ''}${island.waterfallLeft || island.waterfallRight ? ', waterfall' : ''}` : '',
