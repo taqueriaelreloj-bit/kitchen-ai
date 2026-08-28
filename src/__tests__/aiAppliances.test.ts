@@ -8,12 +8,13 @@ const photos:ScanPhoto[]=[0,90,180,270].map((angle,i)=>({uri:`photo-${i}.jpg`,an
 const room=reconstructRoom(photos),design=generateDesigns(room)[0];
 
 describe('AI appliance layout',()=>{
-  test('every applied suggestion includes refrigerator and range',()=>{
+  test('every applied suggestion includes refrigerator, range and sink base',()=>{
     const project=createEditorProject(room,design);
     for(const suggestion of aiDesignSuggestions(project)){
       const next=applyAIDesignSuggestion(project,suggestion);
       expect(next.objects.some(object=>object.id==='ai-refrigerator'&&object.name==='Refrigerator')).toBe(true);
       expect(next.objects.some(object=>object.id==='ai-range'&&object.name==='Range')).toBe(true);
+      expect(next.objects.some(object=>object.kind==='sink-base')).toBe(true);
     }
   });
   test('generated appliances use stainless appliance geometry',()=>{
