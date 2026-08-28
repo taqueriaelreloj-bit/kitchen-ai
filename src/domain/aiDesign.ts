@@ -50,16 +50,28 @@ function row(startX:number,startY:number,totalWidth:number,prefix:string,rotatio
   return objects;
 }
 
+function moveApplianceAwayFromSink(appliance:EditorObject,sink:EditorObject|undefined):EditorObject{
+  if(!sink)return appliance;
+  const applianceArea=objectRect(appliance),sinkArea=objectRect(sink);
+  if(!overlaps(applianceArea,sinkArea))return appliance;
+  const rotation=((appliance.rotation%360)+360)%360,vertical=Math.abs(rotation-90)<1||Math.abs(rotation-270)<1;
+  if(vertical)return {...appliance,y:appliance.y+(sinkArea.bottom-applianceArea.top)+2};
+  return {...appliance,x:appliance.x+(sinkArea.right-applianceArea.left)+2};
+}
+
 function addCoreAppliances(objects:EditorObject[],layout:AILayoutType,runX:number,runY:number):EditorObject[]{
   const refrigeratorProps:Partial<EditorObject>={x:120+Math.max(0,runX-36),y:120,rotation:0};
   const rangeProps:Partial<EditorObject>={x:120,y:120,rotation:0};
   if(layout==='L-Shape')Object.assign(rangeProps,{x:120,y:150+Math.max(12,Math.min(runY-30,runY*.48)),rotation:90});
   if(layout==='Galley')Object.assign(rangeProps,{x:120+Math.max(18,Math.min(runX-30,runX*.45)),y:240,rotation:0});
   if(layout==='U-Shape')Object.assign(refrigeratorProps,{x:120,y:150+Math.max(12,runY-36),rotation:90});
-  const refrigerator=objectDefaults('appliance',{id:'ai-refrigerator',name:'Refrigerator',widthIn:36,depthIn:30,heightIn:70,color:'#A7ADAE',material:'Stainless Steel',...refrigeratorProps});
-  const range=objectDefaults('appliance',{id:'ai-range',name:'Range',widthIn:30,depthIn:28,heightIn:36,color:'#555B5C',material:'Stainless Steel',...rangeProps});
+  const sink=objects.find(object=>object.kind==='sink-base');
+  let refrigerator=objectDefaults('appliance',{id:'ai-refrigerator',name:'Refrigerator',widthIn:36,depthIn:30,heightIn:70,color:'#A7ADAE',material:'Stainless Steel',...refrigeratorProps});
+  let range=objectDefaults('appliance',{id:'ai-range',name:'Range',widthIn:30,depthIn:28,heightIn:36,color:'#555B5C',material:'Stainless Steel',...rangeProps});
+  refrigerator=moveApplianceAwayFromSink(refrigerator,sink);
+  range=moveApplianceAwayFromSink(range,sink);
   const applianceRects=[objectRect(refrigerator),objectRect(range)];
-  const cleared=objects.filter(object=>!applianceRects.some(area=>overlaps(objectRect(object),area)));
+  const cleared=objects.filter(object=>object.kind==='sink-base'||!applianceRects.some(area=>overlaps(objectRect(object),area)));
   return [...cleared,refrigerator,range];
 }
 
