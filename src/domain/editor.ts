@@ -8,7 +8,15 @@ export type TallCabinetKind = 'tall-cabinet' | 'pantry-cabinet' | 'oven-cabinet'
 export type ObjectKind = 'wall' | BaseCabinetKind | WallCabinetKind | TallCabinetKind | 'island' | 'door' | 'window' | 'appliance' | 'countertop' | 'hardware';
 export type Vec2 = { x: number; y: number };
 export type ToeKick = { enabled: boolean; heightIn: number; recessIn: number; color: string; finish: string };
-export type CabinetHardware = { style: string; size: string; finishId: string; position: string };
+export type CabinetHardware = {
+  style: string;
+  size: string;
+  finishId: string;
+  position: string;
+  customSizeIn?: number;
+  customOffsetXIn?: number;
+  customOffsetYIn?: number;
+};
 export type EditorObject = {
   id: string;
   kind: ObjectKind;
@@ -68,7 +76,15 @@ const cabinetDefault = CABINET_FINISHES.find(x => x.name === 'Warm White') ?? CA
 const hardwareDefault = HARDWARE_FINISHES.find(x => x.name === 'Brushed Nickel') ?? HARDWARE_FINISHES[0];
 const wallDefault = WALL_PAINTS.find(x => x.name === 'Pure White') ?? WALL_PAINTS[0];
 export const DEFAULT_TOE_KICK: ToeKick = { enabled: true, heightIn: 4, recessIn: 3, color: cabinetDefault.baseColor, finish: cabinetDefault.finishType };
-export const DEFAULT_HARDWARE: CabinetHardware = { style: 'Bar Pull', size: '5 inches', finishId: hardwareDefault.id, position: 'Center' };
+export const DEFAULT_HARDWARE: CabinetHardware = {
+  style: 'Bar Pull',
+  size: '5 inches',
+  finishId: hardwareDefault.id,
+  position: 'Center',
+  customSizeIn: 5,
+  customOffsetXIn: 0,
+  customOffsetYIn: 0,
+};
 export const DEFAULT_CATALOG_STATE: CatalogState = {
   favoriteWallPaintIds: [],
   recentWallPaintIds: [],
@@ -82,6 +98,21 @@ const uid = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toStrin
 const now = () => new Date().toISOString();
 const isCabinet = (object: EditorObject) => isCabinetKind(object.kind);
 const isBaseLike = (object: EditorObject) => isBaseLikeKind(object.kind);
+const clampFinite = (value: unknown, fallback: number, min: number, max: number) => {
+  const number = typeof value === 'number' ? value : Number(value);
+  return Math.min(max, Math.max(min, Number.isFinite(number) ? number : fallback));
+};
+export function normalizeCabinetHardware(value?: Partial<CabinetHardware>): CabinetHardware {
+  return {
+    style: value?.style ?? DEFAULT_HARDWARE.style,
+    size: value?.size ?? DEFAULT_HARDWARE.size,
+    finishId: value?.finishId ?? DEFAULT_HARDWARE.finishId,
+    position: value?.position ?? DEFAULT_HARDWARE.position,
+    customSizeIn: clampFinite(value?.customSizeIn, DEFAULT_HARDWARE.customSizeIn ?? 5, .5, 36),
+    customOffsetXIn: clampFinite(value?.customOffsetXIn, DEFAULT_HARDWARE.customOffsetXIn ?? 0, -96, 96),
+    customOffsetYIn: clampFinite(value?.customOffsetYIn, DEFAULT_HARDWARE.customOffsetYIn ?? 0, -96, 96),
+  };
+}
 const copyCatalog = (value?: Partial<CatalogState>): CatalogState => ({
   favoriteWallPaintIds: [...(value?.favoriteWallPaintIds ?? [])],
   recentWallPaintIds: [...(value?.recentWallPaintIds ?? [])],
@@ -102,7 +133,7 @@ function matchesScope(object: EditorObject, scope: CabinetScope, selectedId?: st
 }
 
 function cabinetBase(base: EditorObject, name: string, extra: Partial<EditorObject> = {}) {
-  Object.assign(base, { name, color: cabinetDefault.baseColor, finishId: cabinetDefault.id, toeKick: { ...DEFAULT_TOE_KICK }, hardware: { ...DEFAULT_HARDWARE }, ...extra });
+  Object.assign(base, { name, color: cabinetDefault.baseColor, finishId: cabinetDefault.id, toeKick: { ...DEFAULT_TOE_KICK }, hardware: normalizeCabinetHardware(), ...extra });
 }
 
 export function objectDefaults(kind: ObjectKind, partial: Partial<EditorObject> = {}): EditorObject {
@@ -123,7 +154,9 @@ export function objectDefaults(kind: ObjectKind, partial: Partial<EditorObject> 
   if (kind === 'window') Object.assign(base, { widthIn: 48, depthIn: 4.5, heightIn: 48, elevationIn: 36 });
   if (kind === 'appliance') Object.assign(base, { widthIn: 36, depthIn: 30, heightIn: 70, color: '#9FA7A8', material: 'Stainless Steel' });
   if (kind === 'countertop') Object.assign(base, { widthIn: 72, depthIn: 25.5, heightIn: 1.5, color: '#EAE6DC', material: 'Quartz' });
-  return { ...base, ...partial };
+  const result = { ...base, ...partial };
+  if (isCabinetKind(kind)) result.hardware = normalizeCabinetHardware(result.hardware);
+  return result;
 }
 
 export function createEditorProject(room: RoomModel, design: KitchenDesign, name = 'Kitchen Project'): EditorProject {
@@ -160,7 +193,7 @@ export function migrateProject(raw: unknown): EditorProject | undefined {
   const objects = value.objects.map(object => {
     const fresh = objectDefaults(object.kind ?? 'base-cabinet', object);
     if (isBaseLikeKind(fresh.kind)) fresh.toeKick = { ...DEFAULT_TOE_KICK, ...(object.toeKick ?? {}), color: object.toeKick?.color ?? object.color ?? DEFAULT_TOE_KICK.color };
-    if (isCabinetKind(fresh.kind)) fresh.hardware = { ...DEFAULT_HARDWARE, ...(object.hardware ?? {}) };
+    if (isCabinetKind(fresh.kind)) fresh.hardware = normalizeCabinetHardware(object.hardware);
     if (isWallCabinetKind(fresh.kind)) fresh.toeKick = undefined;
     if (fresh.kind === 'wall' && !fresh.wallPaintId) fresh.wallPaintId = wallDefault.id;
     return fresh;
@@ -183,7 +216,7 @@ export function migrateProject(raw: unknown): EditorProject | undefined {
 
 export const clampZoom = (zoom: number) => Math.min(2, Math.max(0.25, Math.round(zoom * 100) / 100));
 export function updateObject(project: EditorProject, id: string, patch: Partial<EditorObject>): EditorProject { return { ...project, objects: project.objects.map(object => object.id === id ? { ...object, ...patch } : object), updatedAt: now() }; }
-export function duplicateObject(project: EditorProject, id: string): EditorProject { const source = project.objects.find(object => object.id === id); if (!source) return project; const copy: EditorObject = { ...source, id: uid(source.kind), name: `${source.name} Copy`, x: source.x + 18, y: source.y + 18, toeKick: source.toeKick ? { ...source.toeKick } : undefined, hardware: source.hardware ? { ...source.hardware } : undefined }; return { ...project, objects: [...project.objects, copy], selectedId: copy.id, updatedAt: now() }; }
+export function duplicateObject(project: EditorProject, id: string): EditorProject { const source = project.objects.find(object => object.id === id); if (!source) return project; const copy: EditorObject = { ...source, id: uid(source.kind), name: `${source.name} Copy`, x: source.x + 18, y: source.y + 18, toeKick: source.toeKick ? { ...source.toeKick } : undefined, hardware: source.hardware ? normalizeCabinetHardware(source.hardware) : undefined }; return { ...project, objects: [...project.objects, copy], selectedId: copy.id, updatedAt: now() }; }
 export function deleteObject(project: EditorProject, id: string): EditorProject { return { ...project, objects: project.objects.filter(object => object.id !== id), selectedId: project.selectedId === id ? undefined : project.selectedId, updatedAt: now() }; }
 
 export function applyWallPaint(project: EditorProject, paintId: string, allWalls = false): EditorProject {
@@ -205,7 +238,13 @@ export function applyCabinetFinish(project: EditorProject, finishId: string, sco
   }), catalogState: state, updatedAt: now() };
 }
 
-export function applyHardware(project: EditorProject, patch: Partial<CabinetHardware>, scope: CabinetScope): EditorProject { return { ...project, objects: project.objects.map(object => matchesScope(object, scope, project.selectedId) ? { ...object, hardware: { ...(object.hardware ?? DEFAULT_HARDWARE), ...patch } } : object), updatedAt: now() }; }
+export function applyHardware(project: EditorProject, patch: Partial<CabinetHardware>, scope: CabinetScope): EditorProject {
+  return {
+    ...project,
+    objects: project.objects.map(object => matchesScope(object, scope, project.selectedId) ? { ...object, hardware: normalizeCabinetHardware({ ...(object.hardware ?? DEFAULT_HARDWARE), ...patch }) } : object),
+    updatedAt: now(),
+  };
+}
 export function removeHardware(project: EditorProject, scope: CabinetScope): EditorProject { return applyHardware(project, { style: 'No Hardware' }, scope); }
 export function applyToeKick(project: EditorProject, patch: Partial<ToeKick>, allBaseCabinets = false): EditorProject { return { ...project, objects: project.objects.map(object => { const target = isBaseLike(object) && (allBaseCabinets || object.id === project.selectedId); return target ? { ...object, toeKick: { ...(object.toeKick ?? DEFAULT_TOE_KICK), ...patch } } : object; }), updatedAt: now() }; }
 
