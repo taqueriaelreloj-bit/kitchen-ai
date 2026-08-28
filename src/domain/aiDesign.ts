@@ -47,7 +47,7 @@ function row(startX:number,startY:number,totalWidth:number,prefix:string,rotatio
 
 function addCoreAppliances(objects:EditorObject[],runX:number):EditorObject[]{
   const refrigeratorX=120+Math.max(0,runX-36);
-  const rangeX=120+Math.max(36,Math.min(runX-30,runX*.52));
+  const rangeX=120;
   const refrigerator=objectDefaults('appliance',{id:'ai-refrigerator',name:'Refrigerator',x:refrigeratorX,y:120,widthIn:36,depthIn:30,heightIn:70,color:'#A7ADAE',material:'Stainless Steel'});
   const range=objectDefaults('appliance',{id:'ai-range',name:'Range',x:rangeX,y:120,widthIn:30,depthIn:28,heightIn:36,color:'#555B5C',material:'Stainless Steel'});
   const applianceRects=[rect(refrigerator.x,refrigerator.y,refrigerator.widthIn,refrigerator.depthIn),rect(range.x,range.y,range.widthIn,range.depthIn)];
