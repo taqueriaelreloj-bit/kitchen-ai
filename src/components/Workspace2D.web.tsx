@@ -1,0 +1,31 @@
+import { useRef } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { clampZoom, EditorProject, updateObject } from '../domain/editor';
+import { moveOpeningAlongWall, openingData } from '../domain/openings';
+
+const AnyView=View as any;
+const AnyPressable=Pressable as any;
+
+type DragState={id:string;x:number;y:number;objectX:number;objectY:number;offset:number;active:boolean;moved:boolean;start?:EditorProject};
+
+export function Workspace2D({project,preview,commitHistory}:{project:EditorProject;preview:(project:EditorProject)=>void;commitHistory:(snapshot:EditorProject)=>void}){
+  const pan=useRef({x:0,y:0,panX:0,panY:0,active:false});
+  const move=useRef<DragState>({id:'',x:0,y:0,objectX:0,objectY:0,offset:0,active:false,moved:false});
+  const spaceHeld=useRef(false);
+  const finishMove=()=>{const state=move.current;if(state.active&&state.moved&&state.start)commitHistory(state.start);move.current={...state,active:false,moved:false,start:undefined};};
+  const webProps={
+    tabIndex:0,
+    onKeyDown:(event:any)=>{if(event.code==='Space'){spaceHeld.current=true;event.preventDefault();}},
+    onKeyUp:(event:any)=>{if(event.code==='Space')spaceHeld.current=false;},
+    onBlur:()=>{spaceHeld.current=false;pan.current.active=false;finishMove();},
+    onWheel:(event:any)=>{event.preventDefault();const old=project.view2d.zoom,next=clampZoom(old+(event.deltaY<0?.08:-.08));if(next===old)return;const rect=event.currentTarget.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top,ratio=next/old;preview({...project,view2d:{...project.view2d,zoom:next,pan:{x:x-(x-project.view2d.pan.x)*ratio,y:y-(y-project.view2d.pan.y)*ratio}}});},
+    onMouseDown:(event:any)=>{if(event.button===1||(event.button===0&&spaceHeld.current)){pan.current={x:event.clientX,y:event.clientY,panX:project.view2d.pan.x,panY:project.view2d.pan.y,active:true};event.preventDefault();}},
+    onMouseMove:(event:any)=>{if(pan.current.active){preview({...project,view2d:{...project.view2d,pan:{x:pan.current.panX+event.clientX-pan.current.x,y:pan.current.panY+event.clientY-pan.current.y}}});return;}if(!move.current.active)return;const dx=(event.clientX-move.current.x)/project.view2d.zoom,dy=(event.clientY-move.current.y)/project.view2d.zoom;if(Math.abs(dx)+Math.abs(dy)>.5)move.current.moved=true;const object=project.objects.find(item=>item.id===move.current.id),data=object?openingData(object):{},parent=data.parentWallId?project.objects.find(item=>item.id===data.parentWallId&&item.kind==='wall'):undefined;if(object&&parent&&(object.kind==='door'||object.kind==='window')){const radians=parent.rotation*Math.PI/180,along=dx*Math.cos(radians)+dy*Math.sin(radians);preview(moveOpeningAlongWall(project,object.id,move.current.offset+along));return;}const snap=(n:number)=>project.view2d.snap?Math.round(n/5)*5:n;preview(updateObject(project,move.current.id,{x:snap(move.current.objectX+dx),y:snap(move.current.objectY+dy)}));},
+    onMouseUp:()=>{pan.current.active=false;finishMove();},
+    onMouseLeave:()=>{pan.current.active=false;finishMove();},
+    onContextMenu:(event:any)=>event.preventDefault(),
+  };
+  return <AnyView accessibilityLabel="2D kitchen workspace" style={s.workspace} {...webProps} onClick={(event:any)=>{if(event.target===event.currentTarget)preview({...project,selectedId:undefined});}}><View style={[s.plan,{transform:[{translateX:project.view2d.pan.x},{translateY:project.view2d.pan.y},{scale:project.view2d.zoom}]}]}>{project.objects.map(object=><AnyPressable key={object.id} accessibilityRole="button" accessibilityLabel={object.name} onPress={()=>preview({...project,selectedId:object.id})} onMouseDown={(event:any)=>{if(event.button!==0||spaceHeld.current)return;event.stopPropagation();move.current={id:object.id,x:event.clientX,y:event.clientY,objectX:object.x,objectY:object.y,offset:openingData(object).wallOffsetIn??0,active:true,moved:false,start:project};preview({...project,selectedId:object.id});}} style={[s.object,{left:object.x,top:object.y,width:Math.max(10,object.widthIn*.45),height:object.kind==='wall'?Math.max(4,object.depthIn*.45):Math.max(8,object.depthIn*.45),backgroundColor:object.color??(object.kind==='window'?'#91C7DC':object.kind==='door'?'#8A664B':'#C7CECA'),transform:[{rotate:`${object.rotation}deg`}]},project.selectedId===object.id&&s.selected]}><Text numberOfLines={1} style={s.label}>{object.name}</Text></AnyPressable>)}</View></AnyView>;
+}
+
+const s=StyleSheet.create({workspace:{flex:1,overflow:'hidden',backgroundColor:'#E2E7E5'},plan:{position:'absolute',left:0,top:0,width:900,height:650},object:{position:'absolute',borderWidth:1,borderColor:'#596762',borderRadius:3,justifyContent:'center'},label:{fontSize:9,fontWeight:'700',paddingHorizontal:2},selected:{borderWidth:3,borderColor:'#0B785A'}});
