@@ -1,13 +1,13 @@
 import { ReactNode, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
-import { CABINET_FINISHES, HARDWARE_FINISHES, HARDWARE_POSITIONS, HARDWARE_SIZES, HARDWARE_STYLES, WALL_PAINTS } from '../domain/catalogs';
+import { HARDWARE_FINISHES, HARDWARE_POSITIONS, HARDWARE_SIZES, HARDWARE_STYLES } from '../domain/catalogs';
 import {
   COUNTERTOP_MATERIALS, EDGE_PROFILES, countertopData, createCountertop, createIsland, islandData,
   updateCountertop, updateIsland,
 } from '../domain/countertops';
 import { layoutIssueCounts, validateKitchenLayout } from '../domain/designValidation';
 import {
-  applyCabinetFinish, applyHardware, applyToeKick, applyWallPaint, CabinetScope, clampZoom,
+  applyHardware, applyToeKick, CabinetScope, clampZoom,
   deleteObject, duplicateObject, EditorObject, EditorProject, isBaseLikeKind, ObjectKind,
   objectDefaults, removeHardware, reset2DView, reset3DView, updateObject,
 } from '../domain/editor';
@@ -16,6 +16,7 @@ import { addOpening, attachOpening, openingData, setDoorSwing, setWindowSillHeig
 import { center2DView, center3DCamera, fit2DView, fit3DCamera } from '../domain/viewFitting';
 import { useEditorHistory } from '../hooks/useEditorHistory';
 import { AIDesignPanel } from './AIDesignPanel';
+import { ColorLibraryPanel } from './ColorLibraryPanel';
 import { LayoutCheckPanel } from './LayoutCheckPanel';
 import { LightingPanel } from './LightingPanel';
 import { NativeWorkspace } from './NativeWorkspace';
@@ -38,7 +39,7 @@ function CountertopControls({project,selected,apply}:{project:EditorProject;sele
 }
 
 function ToolPanel({tool,project,selected,apply}:{tool:Tool;project:EditorProject;selected?:EditorObject;apply:(p:EditorProject,record?:boolean)=>void}){
-  const[scope,setScope]=useState<CabinetScope>('selected'),[query,setQuery]=useState('');
+  const[scope,setScope]=useState<CabinetScope>('selected');
   const add=(kind:ObjectKind)=>apply({...project,objects:[...project.objects,objectDefaults(kind,{x:150+project.objects.length*8,y:120+project.objects.length*8})],updatedAt:new Date().toISOString()});
   if(tool==='AI Design')return <AIDesignPanel project={project} apply={p=>apply(p)}/>;
   if(tool==='Layout Check')return <LayoutCheckPanel project={project} apply={apply}/>;
@@ -49,7 +50,7 @@ function ToolPanel({tool,project,selected,apply}:{tool:Tool;project:EditorProjec
   if(tool==='Lighting')return <LightingPanel project={project} selected={selected} apply={p=>apply(p)}/>;
   if(tool==='Countertops')return <ScrollView><Section title="Countertops"><Button label="Add Countertop" onPress={()=>{const o=createCountertop({x:160+project.objects.length*7,y:130+project.objects.length*6});apply({...project,objects:[...project.objects,o],selectedId:o.id});}}/></Section>{selected?.kind==='countertop'&&<CountertopControls project={project} selected={selected} apply={p=>apply(p)}/>}</ScrollView>;
   if(tool==='Island')return <ScrollView><Section title="Island"><Button label="Add Island" onPress={()=>{const o=createIsland({x:220,y:220});apply({...project,objects:[...project.objects,o],selectedId:o.id});}}/></Section>{selected?.kind==='island'&&<CountertopControls project={project} selected={selected} apply={p=>apply(p)}/>}</ScrollView>;
-  if(tool==='Colors'){const q=query.trim().toLowerCase(),paints=WALL_PAINTS.filter(x=>!q||x.displayName.toLowerCase().includes(q)||x.category.toLowerCase().includes(q)),finishes=CABINET_FINISHES.filter(x=>!q||x.displayName.toLowerCase().includes(q)||x.category.toLowerCase().includes(q));return <ScrollView><TextInput value={query} onChangeText={setQuery} placeholder="Search colors or finishes" style={s.input}/><Section title="Wall Paint"><View style={s.swatches}>{paints.map(x=><Swatch key={x.id} color={x.approximateHex} name={x.displayName} selected={selected?.wallPaintId===x.id} onPress={()=>selected?.kind==='wall'&&apply(applyWallPaint(project,x.id,false))}/>)}</View><Button label="Apply Current to All Walls" disabled={selected?.kind!=='wall'||!selected.wallPaintId} onPress={()=>selected?.wallPaintId&&apply(applyWallPaint(project,selected.wallPaintId,true))}/></Section><Section title="Cabinet Finishes"><ScopeButtons scope={scope} setScope={setScope}/><View style={s.swatches}>{finishes.map(x=><Swatch key={x.id} color={x.baseColor} name={x.displayName} selected={selected?.finishId===x.id} onPress={()=>apply(applyCabinetFinish(project,x.id,scope))}/>)}</View></Section></ScrollView>;}
+  if(tool==='Colors')return <ColorLibraryPanel project={project} selected={selected} apply={p=>apply(p)}/>;
   if(tool==='Hardware')return <ScrollView><Section title="Application"><ScopeButtons scope={scope} setScope={setScope}/><Button label="Remove Hardware" onPress={()=>apply(removeHardware(project,scope))}/></Section><Section title="Style"><View style={s.wrap}>{HARDWARE_STYLES.map(x=><Button key={x} label={x} active={selected?.hardware?.style===x} onPress={()=>apply(applyHardware(project,{style:x},scope))}/>)}</View></Section><Section title="Size"><View style={s.wrap}>{HARDWARE_SIZES.map(x=><Button key={x} label={x} active={selected?.hardware?.size===x} onPress={()=>apply(applyHardware(project,{size:x},scope))}/>)}</View></Section><Section title="Finish"><View style={s.swatches}>{HARDWARE_FINISHES.map(x=><Swatch key={x.id} color={x.baseColor} name={x.displayName} selected={selected?.hardware?.finishId===x.id} onPress={()=>apply(applyHardware(project,{finishId:x.id},scope))}/>)}</View></Section><Section title="Position"><View style={s.wrap}>{HARDWARE_POSITIONS.map(x=><Button key={x} label={x} active={selected?.hardware?.position===x} onPress={()=>apply(applyHardware(project,{position:x},scope))}/>)}</View></Section></ScrollView>;
   if(tool==='Measurements')return <Section title="Measurements"><Button label={project.view2d.grid?'Grid On':'Grid Off'} onPress={()=>apply({...project,view2d:{...project.view2d,grid:!project.view2d.grid}},false)}/><Button label={project.view2d.measurements?'Measurements On':'Measurements Off'} onPress={()=>apply({...project,view2d:{...project.view2d,measurements:!project.view2d.measurements}},false)}/><Button label={project.view2d.snap?'Snap On':'Snap Off'} onPress={()=>apply({...project,view2d:{...project.view2d,snap:!project.view2d.snap}},false)}/></Section>;
   if(tool==='View')return <Section title="Navigation Help"><Text style={s.help}>2D touch: pinch with two fingers to zoom toward the midpoint; drag empty space to pan; tap an object to select. Fit shows the complete design, Center preserves zoom, and Reset returns the default view. In 3D, drag to orbit and pinch to zoom/pan.</Text></Section>;
