@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
-import { EditorProject, Vec2, View2DState } from '../domain/editor';
+import { EditorObject, EditorProject, Vec2, View2DState } from '../domain/editor';
+import { createObjectDragOrigin, moveObjectByPlanDelta, ObjectDragOrigin } from '../domain/objectMovement';
 import { pan2DView, pinch2DView } from '../domain/touchNavigation';
 
 type Props = { project: EditorProject; apply: (project: EditorProject, record?: boolean) => void };
 type GestureState = { mode: 'none'|'pan'|'pinch'; startView: View2DState; startDistance: number; startMidpoint: Vec2 };
+type ObjectProps = Props & { object: EditorObject; view: View2DState; setObjectTouch: (active: boolean) => void };
 
 const touchPoint = (touch: any): Vec2 => ({
   x: Number.isFinite(touch.locationX) ? touch.locationX : touch.pageX,
@@ -22,6 +24,74 @@ const distance = (touches: any[]) => {
 };
 const verticalGrid = Array.from({ length: 76 }, (_, index) => index * 12);
 const horizontalGrid = Array.from({ length: 56 }, (_, index) => index * 12);
+
+function NativePlanObject({ project, object, view, apply, setObjectTouch }: ObjectProps) {
+  const [previewObject, setPreviewObject] = useState(object);
+  const [dragging, setDragging] = useState(false);
+  const origin = useRef<ObjectDragOrigin>();
+  const startProject = useRef<EditorProject>();
+  const finalProject = useRef<EditorProject>();
+  const moved = useRef(false);
+
+  useEffect(() => {
+    if (!dragging) setPreviewObject(object);
+  }, [object, dragging]);
+
+  const finish = (commit: boolean) => {
+    setObjectTouch(false);
+    setDragging(false);
+    if (commit && moved.current && finalProject.current) apply({ ...finalProject.current, selectedId: object.id }, true);
+    else setPreviewObject(object);
+    moved.current = false;
+    origin.current = undefined;
+    startProject.current = undefined;
+    finalProject.current = undefined;
+  };
+
+  const responder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (event, state) => event.nativeEvent.touches.length === 1 && Math.abs(state.dx) + Math.abs(state.dy) > 4,
+    onPanResponderGrant: () => {
+      const dragOrigin = createObjectDragOrigin(project, object.id);
+      if (!dragOrigin) return;
+      origin.current = dragOrigin;
+      startProject.current = project;
+      finalProject.current = project;
+      moved.current = false;
+      setDragging(true);
+      setObjectTouch(true);
+    },
+    onPanResponderMove: (_event, state) => {
+      if (!origin.current || !startProject.current) return;
+      const dx = state.dx / view.zoom;
+      const dy = state.dy / view.zoom;
+      if (Math.abs(dx) + Math.abs(dy) > .5) moved.current = true;
+      const next = moveObjectByPlanDelta(startProject.current, origin.current, dx, dy);
+      finalProject.current = next;
+      const nextObject = next.objects.find(item => item.id === object.id);
+      if (nextObject) setPreviewObject(nextObject);
+    },
+    onPanResponderRelease: () => finish(true),
+    onPanResponderTerminate: () => finish(false),
+    onPanResponderTerminationRequest: () => true,
+  }), [project, object.id, object, view.zoom, apply, setObjectTouch]);
+
+  const width = Math.max(18, previewObject.widthIn * .38);
+  const depth = previewObject.kind === 'wall' ? Math.max(5, previewObject.depthIn * .38) : Math.max(12, previewObject.depthIn * .38);
+  return <Pressable
+    accessibilityRole="button"
+    accessibilityLabel={`${previewObject.name}, ${Math.round(previewObject.widthIn)} by ${Math.round(previewObject.depthIn)} inches`}
+    accessibilityHint="Tap to select or drag to move"
+    onPressIn={() => setObjectTouch(true)}
+    onPressOut={() => { if (!dragging) setObjectTouch(false); }}
+    onPress={event => { event.stopPropagation(); apply({ ...project, selectedId: object.id }, false); }}
+    style={[s.object, { left: previewObject.x, top: previewObject.y, width, height: depth, backgroundColor: previewObject.color ?? '#C8CFCC', transform: [{ rotate: `${previewObject.rotation}deg` }] }, (project.selectedId === object.id || dragging) && s.selected]}
+    {...responder.panHandlers}
+  >
+    <Text numberOfLines={1} style={s.objectLabel}>{previewObject.name}</Text>
+    {view.measurements && <Text numberOfLines={1} style={s.dimensionLabel}>{Math.round(previewObject.widthIn)}″ × {Math.round(previewObject.depthIn)}″</Text>}
+  </Pressable>;
+}
 
 export function NativeWorkspace({ project, apply }: Props) {
   const [view, setView] = useState<View2DState>(project.view2d);
@@ -51,6 +121,7 @@ export function NativeWorkspace({ project, apply }: Props) {
     gesture.current = { ...gesture.current, mode: 'none' };
     objectTouch.current = false;
   };
+  const setObjectTouch = (active: boolean) => { objectTouch.current = active; };
 
   const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => false,
@@ -86,26 +157,15 @@ export function NativeWorkspace({ project, apply }: Props) {
   </View>;
 
   const planTransform = { transformOrigin: [0, 0, 0], transform: [{ translateX: view.pan.x }, { translateY: view.pan.y }, { scale: view.zoom }] } as any;
-  return <Pressable accessibilityLabel="Touch 2D kitchen workspace" accessibilityHint="Pinch with two fingers to zoom or drag empty space to pan" onPress={() => apply({ ...project, selectedId: undefined }, false)} style={s.workspace} {...panResponder.panHandlers}>
+  return <Pressable accessibilityLabel="Touch 2D kitchen workspace" accessibilityHint="Pinch with two fingers to zoom, drag empty space to pan, or drag an object to move it" onPress={() => apply({ ...project, selectedId: undefined }, false)} style={s.workspace} {...panResponder.panHandlers}>
     <View style={[s.plan, planTransform]}>
       {view.grid && <View pointerEvents="none" style={StyleSheet.absoluteFill}>
         {verticalGrid.map(left => <View key={`v-${left}`} style={[s.gridVertical, { left }]} />)}
         {horizontalGrid.map(top => <View key={`h-${top}`} style={[s.gridHorizontal, { top }]} />)}
       </View>}
-      {project.objects.map(object => <Pressable
-        key={object.id}
-        accessibilityRole="button"
-        accessibilityLabel={`${object.name}, ${Math.round(object.widthIn)} by ${Math.round(object.depthIn)} inches`}
-        onPressIn={() => { objectTouch.current = true; }}
-        onPressOut={() => { objectTouch.current = false; }}
-        onPress={event => { event.stopPropagation(); apply({ ...project, selectedId: object.id }, false); }}
-        style={[s.object, { left: object.x, top: object.y, width: Math.max(18, object.widthIn * .38), height: object.kind === 'wall' ? Math.max(5, object.depthIn * .38) : Math.max(12, object.depthIn * .38), backgroundColor: object.color ?? '#C8CFCC', transform: [{ rotate: `${object.rotation}deg` }] }, project.selectedId === object.id && s.selected]}
-      >
-        <Text numberOfLines={1} style={s.objectLabel}>{object.name}</Text>
-        {view.measurements && <Text numberOfLines={1} style={s.dimensionLabel}>{Math.round(object.widthIn)}″ × {Math.round(object.depthIn)}″</Text>}
-      </Pressable>)}
+      {project.objects.map(object => <NativePlanObject key={object.id} project={project} object={object} view={view} apply={apply} setObjectTouch={setObjectTouch} />)}
     </View>
-    <View pointerEvents="none" style={s.touchHint}><Text style={s.touchHintText}>Pinch Zoom · Empty-space Pan · {Math.round(view.zoom * 100)}% · {view.snap ? 'Snap On' : 'Snap Off'}</Text></View>
+    <View pointerEvents="none" style={s.touchHint}><Text style={s.touchHintText}>Pinch Zoom · Empty Pan · Drag Object · {Math.round(view.zoom * 100)}% · {view.snap ? 'Snap On' : 'Snap Off'}</Text></View>
   </Pressable>;
 }
 
