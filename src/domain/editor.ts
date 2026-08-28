@@ -16,6 +16,7 @@ export type EditorProject = {
   version: 2; id: string; name: string; room: RoomModel; design: KitchenDesign; objects: EditorObject[]; selectedId?: string;
   viewMode: ViewMode; view2d: View2DState; camera3d: Camera3DState; updatedAt: string;
 };
+export type CabinetScope = 'selected' | 'base' | 'wall' | 'island' | 'all';
 
 const cabinetDefault = CABINET_FINISHES.find(x => x.name === 'Warm White') ?? CABINET_FINISHES[0];
 const hardwareDefault = HARDWARE_FINISHES.find(x => x.name === 'Brushed Nickel') ?? HARDWARE_FINISHES[0];
@@ -24,6 +25,17 @@ export const DEFAULT_TOE_KICK: ToeKick = { enabled: true, heightIn: 4, recessIn:
 export const DEFAULT_HARDWARE: CabinetHardware = { style: 'Bar Pull', size: '5 inches', finishId: hardwareDefault.id, position: 'Center' };
 
 const uid = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+const now = () => new Date().toISOString();
+const isCabinet = (object: EditorObject) => object.kind === 'base-cabinet' || object.kind === 'wall-cabinet' || object.kind === 'island';
+const isBaseLike = (object: EditorObject) => object.kind === 'base-cabinet' || object.kind === 'island';
+function matchesScope(object: EditorObject, scope: CabinetScope, selectedId?: string) {
+  if (scope === 'selected') return object.id === selectedId && isCabinet(object);
+  if (scope === 'base') return object.kind === 'base-cabinet';
+  if (scope === 'wall') return object.kind === 'wall-cabinet';
+  if (scope === 'island') return object.kind === 'island';
+  return isCabinet(object);
+}
+
 export function objectDefaults(kind: ObjectKind, partial: Partial<EditorObject> = {}): EditorObject {
   const base: EditorObject = { id: uid(kind), kind, name: kind.replace(/-/g, ' '), x: 120, y: 120, widthIn: 36, depthIn: 24, heightIn: 34.5, rotation: 0 };
   if (kind === 'wall') Object.assign(base, { widthIn: 144, depthIn: 4.5, heightIn: 96, wallPaintId: wallDefault.id, color: wallDefault.approximateHex, material: 'Painted drywall' });
@@ -48,7 +60,7 @@ export function createEditorProject(room: RoomModel, design: KitchenDesign, name
     objectDefaults('wall-cabinet', { id: 'upper-1', name: 'Wall Cabinet', x: 150, y: 82, color: cabinetColor }),
   ];
   if (design.includesIsland) objects.push(objectDefaults('island', { id: 'island-1', name: 'Island', x: 260, y: 235, color: cabinetColor, toeKick: { ...DEFAULT_TOE_KICK, color: cabinetColor } }));
-  return { version: 2, id: room.id, name, room, design, objects, viewMode: '2d', view2d: { zoom: 1, pan: { x: 0, y: 0 }, grid: true, snap: true, measurements: true }, camera3d: { distance: 520, yaw: -28, pitch: 30, target: { x: 220, y: 170 } }, updatedAt: new Date().toISOString() };
+  return { version: 2, id: room.id, name, room, design, objects, viewMode: '2d', view2d: { zoom: 1, pan: { x: 0, y: 0 }, grid: true, snap: true, measurements: true }, camera3d: { distance: 520, yaw: -28, pitch: 30, target: { x: 220, y: 170 } }, updatedAt: now() };
 }
 
 export function migrateProject(raw: unknown): EditorProject | undefined {
@@ -66,11 +78,50 @@ export function migrateProject(raw: unknown): EditorProject | undefined {
   return {
     version: 2, id: value.id ?? value.room.id, name: value.name ?? 'Kitchen Project', room: value.room, design: value.design, objects,
     selectedId: value.selectedId, viewMode: value.viewMode ?? '2d', view2d: { zoom: 1, pan: { x: 0, y: 0 }, grid: true, snap: true, measurements: true, ...(value.view2d ?? {}) },
-    camera3d: { distance: 520, yaw: -28, pitch: 30, target: { x: 220, y: 170 }, ...(value.camera3d ?? {}) }, updatedAt: value.updatedAt ?? new Date().toISOString(),
+    camera3d: { distance: 520, yaw: -28, pitch: 30, target: { x: 220, y: 170 }, ...(value.camera3d ?? {}) }, updatedAt: value.updatedAt ?? now(),
   };
 }
 
 export const clampZoom = (zoom: number) => Math.min(2, Math.max(.25, Math.round(zoom * 100) / 100));
-export function updateObject(project: EditorProject, id: string, patch: Partial<EditorObject>): EditorProject { return { ...project, objects: project.objects.map(o => o.id === id ? { ...o, ...patch } : o), updatedAt: new Date().toISOString() }; }
-export function duplicateObject(project: EditorProject, id: string): EditorProject { const source = project.objects.find(o => o.id === id); if (!source) return project; const copy: EditorObject = { ...source, id: uid(source.kind), name: `${source.name} Copy`, x: source.x + 18, y: source.y + 18, toeKick: source.toeKick ? { ...source.toeKick } : undefined, hardware: source.hardware ? { ...source.hardware } : undefined }; return { ...project, objects: [...project.objects, copy], selectedId: copy.id, updatedAt: new Date().toISOString() }; }
-export function deleteObject(project: EditorProject, id: string): EditorProject { return { ...project, objects: project.objects.filter(o => o.id !== id), selectedId: project.selectedId === id ? undefined : project.selectedId, updatedAt: new Date().toISOString() }; }
+export function updateObject(project: EditorProject, id: string, patch: Partial<EditorObject>): EditorProject { return { ...project, objects: project.objects.map(o => o.id === id ? { ...o, ...patch } : o), updatedAt: now() }; }
+export function duplicateObject(project: EditorProject, id: string): EditorProject { const source = project.objects.find(o => o.id === id); if (!source) return project; const copy: EditorObject = { ...source, id: uid(source.kind), name: `${source.name} Copy`, x: source.x + 18, y: source.y + 18, toeKick: source.toeKick ? { ...source.toeKick } : undefined, hardware: source.hardware ? { ...source.hardware } : undefined }; return { ...project, objects: [...project.objects, copy], selectedId: copy.id, updatedAt: now() }; }
+export function deleteObject(project: EditorProject, id: string): EditorProject { return { ...project, objects: project.objects.filter(o => o.id !== id), selectedId: project.selectedId === id ? undefined : project.selectedId, updatedAt: now() }; }
+
+export function applyWallPaint(project: EditorProject, paintId: string, allWalls = false): EditorProject {
+  const paint = WALL_PAINTS.find(x => x.id === paintId);
+  if (!paint) return project;
+  return { ...project, objects: project.objects.map(o => o.kind === 'wall' && (allWalls || o.id === project.selectedId) ? { ...o, wallPaintId: paint.id, color: paint.approximateHex } : o), updatedAt: now() };
+}
+
+export function applyCabinetFinish(project: EditorProject, finishId: string, scope: CabinetScope): EditorProject {
+  const finish = CABINET_FINISHES.find(x => x.id === finishId);
+  if (!finish) return project;
+  return { ...project, objects: project.objects.map(o => {
+    if (!matchesScope(o, scope, project.selectedId)) return o;
+    return { ...o, finishId: finish.id, color: finish.baseColor, toeKick: o.toeKick ? { ...o.toeKick, color: finish.baseColor, finish: finish.finishType } : o.toeKick };
+  }), updatedAt: now() };
+}
+
+export function applyHardware(project: EditorProject, patch: Partial<CabinetHardware>, scope: CabinetScope): EditorProject {
+  return { ...project, objects: project.objects.map(o => matchesScope(o, scope, project.selectedId) ? { ...o, hardware: { ...(o.hardware ?? DEFAULT_HARDWARE), ...patch } } : o), updatedAt: now() };
+}
+
+export function removeHardware(project: EditorProject, scope: CabinetScope): EditorProject {
+  return applyHardware(project, { style: 'No Hardware' }, scope);
+}
+
+export function applyToeKick(project: EditorProject, patch: Partial<ToeKick>, allBaseCabinets = false): EditorProject {
+  return { ...project, objects: project.objects.map(o => {
+    const target = isBaseLike(o) && (allBaseCabinets || o.id === project.selectedId);
+    if (!target) return o;
+    return { ...o, toeKick: { ...(o.toeKick ?? DEFAULT_TOE_KICK), ...patch } };
+  }), updatedAt: now() };
+}
+
+export function reset2DView(project: EditorProject): EditorProject {
+  return { ...project, view2d: { ...project.view2d, zoom: 1, pan: { x: 0, y: 0 } } };
+}
+
+export function reset3DView(project: EditorProject): EditorProject {
+  return { ...project, camera3d: { distance: 520, yaw: -28, pitch: 30, target: { x: 220, y: 170 } } };
+}
