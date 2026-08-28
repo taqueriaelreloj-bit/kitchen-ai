@@ -2,6 +2,7 @@ import { CABINET_FINISHES } from './catalogs';
 import { createIsland, updateCountertop, updateIsland } from './countertops';
 import { generateDesigns } from './design';
 import { EditorObject, EditorProject, isCabinetKind, objectDefaults } from './editor';
+import { findIslandPosition } from './layoutValidation';
 import { isLighting } from './lighting';
 
 export type AILayoutType = 'Single Wall'|'L-Shape'|'Galley'|'U-Shape';
@@ -46,7 +47,10 @@ export function applyAIDesignSuggestion(project:EditorProject,suggestion:AIDesig
   if(suggestion.layout==='U-Shape'){generated.push(...row(120,120,runX,'ai-north'));generated.push(...row(120,150,Math.max(60,runY-36),'ai-west',90));generated.push(...row(120+runX,150,Math.max(60,runY-36),'ai-east',90));}
   const finish=cabinetFinishForStyle(suggestion.style);
   generated=generated.map(object=>isCabinetKind(object.kind)?{...object,color:finish.baseColor,finishId:finish.id,toeKick:object.toeKick?{...object.toeKick,color:finish.baseColor,finish:finish.finishType}:object.toeKick}:object);
-  let next:EditorProject={...project,design:{...project.design,style:suggestion.style,cabinetColor:suggestion.style==='warm'?'wood':suggestion.style==='modern'?'white':'navy',includesIsland:suggestion.includesIsland},objects:[...preserved,...generated],selectedId:undefined,updatedAt:new Date().toISOString()};
-  if(suggestion.includesIsland){const island=createIsland({id:'ai-island',name:'AI Island',x:250,y:245,widthIn:Math.min(84,Math.max(60,roomWidth*.42)),depthIn:42,color:finish.baseColor,finishId:finish.id});next={...next,objects:[...next.objects,island],selectedId:island.id};next=updateIsland(next,island.id,{seatingCount:3,sink:suggestion.style!=='classic',dishwasher:suggestion.style!=='classic'});next=updateCountertop(next,island.id,{materialId:suggestion.style==='classic'?'quartz-calacatta':'quartz-white'});}
+  const islandWidth=Math.min(84,Math.max(60,roomWidth*.42)),islandDepth=42;
+  const islandPosition=suggestion.includesIsland?findIslandPosition(generated,roomWidth,roomLength,islandWidth,islandDepth,36):undefined;
+  const includesIsland=Boolean(islandPosition);
+  let next:EditorProject={...project,design:{...project.design,style:suggestion.style,cabinetColor:suggestion.style==='warm'?'wood':suggestion.style==='modern'?'white':'navy',includesIsland},objects:[...preserved,...generated],selectedId:undefined,updatedAt:new Date().toISOString()};
+  if(islandPosition){const island=createIsland({id:'ai-island',name:'AI Island',x:islandPosition.x,y:islandPosition.y,widthIn:islandWidth,depthIn:islandDepth,color:finish.baseColor,finishId:finish.id});next={...next,objects:[...next.objects,island],selectedId:island.id};next=updateIsland(next,island.id,{seatingCount:3,sink:suggestion.style!=='classic',dishwasher:suggestion.style!=='classic'});next=updateCountertop(next,island.id,{materialId:suggestion.style==='classic'?'quartz-calacatta':'quartz-white'});}
   return next;
 }
