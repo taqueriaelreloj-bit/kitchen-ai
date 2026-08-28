@@ -15,8 +15,12 @@ export function EditorShell({initialProject,onProjectChange,onExit}:{initialProj
 
   const publish=(next:EditorProject)=>{setProject(next);onProjectChange(next);};
   const apply=(next:EditorProject,record=true)=>{if(record){undo.current.push(project);if(undo.current.length>60)undo.current.shift();redo.current=[];}publish(next);};
-  const preview=(next:EditorProject)=>publish(next);
-  const commitHistory=(snapshot:EditorProject)=>{undo.current.push(snapshot);if(undo.current.length>60)undo.current.shift();redo.current=[];};
+  // Camera, zoom, pan and selection are visual state. Keep them local so a wheel/orbit
+  // gesture does not trigger an AsyncStorage write for every browser event.
+  const preview=(next:EditorProject)=>setProject(next);
+  // A drag may contain dozens of pointer-move previews. Commit the original snapshot
+  // once, publish the final design once, and therefore create one Undo/save operation.
+  const commitHistory=(snapshot:EditorProject,finalProject:EditorProject)=>{undo.current.push(snapshot);if(undo.current.length>60)undo.current.shift();redo.current=[];publish(finalProject);};
   const doUndo=()=>{const previous=undo.current.pop();if(!previous)return;redo.current.push(project);publish(previous);};
   const doRedo=()=>{const next=redo.current.pop();if(!next)return;undo.current.push(project);publish(next);};
   const fit=()=>project.viewMode==='2d'?preview({...project,view2d:{...project.view2d,zoom:.72,pan:{x:30,y:24}}}):preview({...project,camera3d:{...project.camera3d,distance:700,target:{x:220,y:170}}});
