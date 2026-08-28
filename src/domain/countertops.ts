@@ -55,7 +55,13 @@ export function updateCountertop(project:EditorProject,id:string,patch:Partial<C
 export function updateIsland(project:EditorProject,id:string,patch:Partial<IslandSpec>):EditorProject {
   const object=project.objects.find(x=>x.id===id&&x.kind==='island');
   if(!object)return project;
-  return updateObject(project,id,{islandSpec:{...islandData(object),...patch}} as Partial<EditorObject>);
+  const islandSpec={...islandData(object),...patch};
+  const countertopSpec={...countertopData(object)};
+  // One source of truth for island plumbing/cooking layout: enabling the island
+  // feature also creates the required countertop cutout, and disabling removes it.
+  if (patch.sink !== undefined) countertopSpec.sinkCutout = patch.sink;
+  if (patch.cooktop !== undefined) countertopSpec.cooktopCutout = patch.cooktop;
+  return updateObject(project,id,{islandSpec,countertopSpec} as Partial<EditorObject>);
 }
 export function countertopMaterial(object:EditorObject):CountertopMaterial {
   const spec=countertopData(object); return COUNTERTOP_MATERIALS.find(x=>x.id===spec.materialId)??COUNTERTOP_MATERIALS[0];

@@ -27,6 +27,13 @@ describe('Countertops and islands',()=>{
     project=updateIsland(project,'island',{seatingCount:4,seatingOverhangIn:15,sink:true,dishwasher:true,waterfallLeft:true});
     expect(islandData(project.objects[0])).toMatchObject({seatingCount:4,seatingOverhangIn:15,sink:true,dishwasher:true,waterfallLeft:true});
   });
+  test('island sink and cooktop stay synchronized with slab cutouts',()=>{
+    const island=createIsland({id:'island'}); let project=createEditorProject(room,design); project={...project,objects:[island]};
+    project=updateIsland(project,'island',{sink:true,cooktop:true});
+    expect(countertopData(project.objects[0])).toMatchObject({sinkCutout:true,cooktopCutout:true});
+    project=updateIsland(project,'island',{sink:false,cooktop:false});
+    expect(countertopData(project.objects[0])).toMatchObject({sinkCutout:false,cooktopCutout:false});
+  });
   test('unknown objects are not modified',()=>{
     const wall=createEditorProject(room,design).objects.find(o=>o.kind==='wall')!; const project={...createEditorProject(room,design),objects:[wall]};
     expect(updateCountertop(project,wall.id,{thicknessIn:3})).toEqual(project);
