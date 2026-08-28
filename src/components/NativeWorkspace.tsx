@@ -28,9 +28,9 @@ const horizontalGrid = Array.from({ length: 56 }, (_, index) => index * 12);
 function NativePlanObject({ project, object, view, apply, setObjectTouch }: ObjectProps) {
   const [previewObject, setPreviewObject] = useState(object);
   const [dragging, setDragging] = useState(false);
-  const origin = useRef<ObjectDragOrigin>();
-  const startProject = useRef<EditorProject>();
-  const finalProject = useRef<EditorProject>();
+  const origin = useRef<ObjectDragOrigin | undefined>(undefined);
+  const startProject = useRef<EditorProject | undefined>(undefined);
+  const finalProject = useRef<EditorProject | undefined>(undefined);
   const moved = useRef(false);
 
   useEffect(() => {
