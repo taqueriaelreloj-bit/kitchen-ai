@@ -19,7 +19,12 @@ type Rect={left:number;top:number;right:number;bottom:number};
 const inches=(meters:number)=>meters*39.3701;
 const rect=(x:number,y:number,width:number,depth:number):Rect=>({left:x,top:y,right:x+width,bottom:y+depth});
 const overlaps=(a:Rect,b:Rect)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;
-const objectRect=(object:EditorObject)=>rect(object.x,object.y,object.widthIn,object.depthIn);
+const objectRect=(object:EditorObject)=>{
+  const rotation=((object.rotation%360)+360)%360,vertical=Math.abs(rotation-90)<1||Math.abs(rotation-270)<1;
+  if(!vertical)return rect(object.x,object.y,object.widthIn,object.depthIn);
+  const centerX=object.x+object.widthIn/2,centerY=object.y+object.depthIn/2;
+  return rect(centerX-object.depthIn/2,centerY-object.widthIn/2,object.depthIn,object.widthIn);
+};
 const cabinetFinishForStyle=(style:AIDesignSuggestion['style'])=>{
   const target=style==='warm'?'White Oak':style==='modern'?'Warm White':'Navy';
   return CABINET_FINISHES.find(item=>item.name===target)??CABINET_FINISHES[0];
@@ -45,12 +50,15 @@ function row(startX:number,startY:number,totalWidth:number,prefix:string,rotatio
   return objects;
 }
 
-function addCoreAppliances(objects:EditorObject[],runX:number):EditorObject[]{
-  const refrigeratorX=120+Math.max(0,runX-36);
-  const rangeX=120;
-  const refrigerator=objectDefaults('appliance',{id:'ai-refrigerator',name:'Refrigerator',x:refrigeratorX,y:120,widthIn:36,depthIn:30,heightIn:70,color:'#A7ADAE',material:'Stainless Steel'});
-  const range=objectDefaults('appliance',{id:'ai-range',name:'Range',x:rangeX,y:120,widthIn:30,depthIn:28,heightIn:36,color:'#555B5C',material:'Stainless Steel'});
-  const applianceRects=[rect(refrigerator.x,refrigerator.y,refrigerator.widthIn,refrigerator.depthIn),rect(range.x,range.y,range.widthIn,range.depthIn)];
+function addCoreAppliances(objects:EditorObject[],layout:AILayoutType,runX:number,runY:number):EditorObject[]{
+  const refrigeratorProps:Partial<EditorObject>={x:120+Math.max(0,runX-36),y:120,rotation:0};
+  const rangeProps:Partial<EditorObject>={x:120,y:120,rotation:0};
+  if(layout==='L-Shape')Object.assign(rangeProps,{x:120,y:150+Math.max(12,Math.min(runY-30,runY*.48)),rotation:90});
+  if(layout==='Galley')Object.assign(rangeProps,{x:120+Math.max(18,Math.min(runX-30,runX*.45)),y:240,rotation:0});
+  if(layout==='U-Shape')Object.assign(refrigeratorProps,{x:120,y:150+Math.max(12,runY-36),rotation:90});
+  const refrigerator=objectDefaults('appliance',{id:'ai-refrigerator',name:'Refrigerator',widthIn:36,depthIn:30,heightIn:70,color:'#A7ADAE',material:'Stainless Steel',...refrigeratorProps});
+  const range=objectDefaults('appliance',{id:'ai-range',name:'Range',widthIn:30,depthIn:28,heightIn:36,color:'#555B5C',material:'Stainless Steel',...rangeProps});
+  const applianceRects=[objectRect(refrigerator),objectRect(range)];
   const cleared=objects.filter(object=>!applianceRects.some(area=>overlaps(objectRect(object),area)));
   return [...cleared,refrigerator,range];
 }
@@ -64,7 +72,7 @@ export function applyAIDesignSuggestion(project:EditorProject,suggestion:AIDesig
   if(suggestion.layout==='L-Shape'){generated.push(...row(120,120,runX,'ai-north'));generated.push(...row(120,150,Math.max(60,runY-36),'ai-west',90));}
   if(suggestion.layout==='Galley'){generated.push(...row(120,120,runX,'ai-galley-a'));generated.push(...row(120,240,runX,'ai-galley-b'));}
   if(suggestion.layout==='U-Shape'){generated.push(...row(120,120,runX,'ai-north'));generated.push(...row(120,150,Math.max(60,runY-36),'ai-west',90));generated.push(...row(120+runX,150,Math.max(60,runY-36),'ai-east',90));}
-  generated=addCoreAppliances(generated,runX);
+  generated=addCoreAppliances(generated,suggestion.layout,runX,runY);
   const finish=cabinetFinishForStyle(suggestion.style);
   generated=generated.map(object=>isCabinetKind(object.kind)?{...object,color:finish.baseColor,finishId:finish.id,toeKick:object.toeKick?{...object.toeKick,color:finish.baseColor,finish:finish.finishType}:object.toeKick}:object);
   const islandWidth=Math.min(84,Math.max(60,roomWidth*.42)),islandDepth=42;
