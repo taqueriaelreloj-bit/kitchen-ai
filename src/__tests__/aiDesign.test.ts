@@ -1,6 +1,7 @@
 import { aiDesignSuggestions, applyAIDesignSuggestion } from '../domain/aiDesign';
 import { createEditorProject, objectDefaults } from '../domain/editor';
 import { generateDesigns } from '../domain/design';
+import { createLighting } from '../domain/lighting';
 import { reconstructRoom } from '../domain/room';
 import { ScanPhoto } from '../domain/types';
 
@@ -14,11 +15,15 @@ describe('AI Design editor suggestions',()=>{
     expect(new Set(suggestions.map(x=>x.style))).toEqual(new Set(['warm','modern','classic']));
     expect(suggestions.every(x=>x.layout.length>0)).toBe(true);
   });
-  test('preserves walls and openings while replacing cabinetry',()=>{
-    let project=createEditorProject(room,design); const door=objectDefaults('door',{id:'client-door',name:'Client Door'}); project={...project,objects:[...project.objects,door]};
+  test('preserves walls, openings and lighting while replacing cabinetry',()=>{
+    let project=createEditorProject(room,design);
+    const door=objectDefaults('door',{id:'client-door',name:'Client Door'});
+    const light=createLighting('Pendant',{id:'client-light',name:'Client Pendant'});
+    project={...project,objects:[...project.objects,door,light]};
     const suggestion=aiDesignSuggestions(project)[0]; const next=applyAIDesignSuggestion(project,suggestion);
     expect(next.objects.some(x=>x.id==='wall-north')).toBe(true);
     expect(next.objects.some(x=>x.id==='client-door')).toBe(true);
+    expect(next.objects.some(x=>x.id==='client-light')).toBe(true);
     expect(next.objects.some(x=>x.id.startsWith('ai-')&&x.kind.includes('cabinet'))).toBe(true);
   });
   test('does not mutate source project',()=>{
