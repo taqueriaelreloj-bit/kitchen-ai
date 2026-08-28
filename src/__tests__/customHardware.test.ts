@@ -8,6 +8,7 @@ import {
   objectDefaults,
 } from '../domain/editor';
 import { hardwareGeometry } from '../domain/hardwareGeometry';
+import { projectScheduleCsv } from '../domain/projectIO';
 import { reconstructRoom } from '../domain/room';
 import { ScanPhoto } from '../domain/types';
 
@@ -47,6 +48,14 @@ describe('custom cabinet hardware', () => {
     expect(copy.hardware).not.toBe(hardware);
   });
 
+  test('custom values survive a JSON save/load round trip', () => {
+    let project = createEditorProject(room, design);
+    project = { ...project, selectedId: 'base-1' };
+    project = applyHardware(project, { style: 'T-Bar Pull', size: 'Custom Size', customSizeIn: 11.75, position: 'Custom Position', customOffsetXIn: -2.5, customOffsetYIn: 7 }, 'selected');
+    const restored = migrateProject(JSON.parse(JSON.stringify(project)))!;
+    expect(restored.objects.find(object => object.id === 'base-1')?.hardware).toMatchObject({ customSizeIn: 11.75, customOffsetXIn: -2.5, customOffsetYIn: 7 });
+  });
+
   test('custom size controls the rendered pull length', () => {
     const object = objectDefaults('base-cabinet', { widthIn: 36, hardware: { style: 'Bar Pull', size: 'Custom Size', finishId: 'brushed-nickel', position: 'Horizontal', customSizeIn: 9.25 } });
     const geometry = hardwareGeometry(object)!;
@@ -67,5 +76,14 @@ describe('custom cabinet hardware', () => {
     const knob = hardwareGeometry(clamped)!.parts[0];
     expect(knob.offsetXIn).toBe(3);
     expect(knob.offsetYIn).toBe(-4);
+  });
+
+  test('CSV schedules include actual custom size and offsets', () => {
+    let project = createEditorProject(room, design);
+    project = { ...project, selectedId: 'base-1' };
+    project = applyHardware(project, { size: 'Custom Size', customSizeIn: 8.25, position: 'Custom Position', customOffsetXIn: 3.5, customOffsetYIn: -4 }, 'selected');
+    const csv = projectScheduleCsv(project);
+    expect(csv).toContain('8.25in custom');
+    expect(csv).toContain('Custom Position X 3.5in / Y -4in');
   });
 });
