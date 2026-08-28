@@ -2,6 +2,7 @@ import { CABINET_FINISHES } from './catalogs';
 import { createIsland, updateCountertop, updateIsland } from './countertops';
 import { generateDesigns } from './design';
 import { EditorObject, EditorProject, isCabinetKind, objectDefaults } from './editor';
+import { isLighting } from './lighting';
 
 export type AILayoutType = 'Single Wall'|'L-Shape'|'Galley'|'U-Shape';
 export type AIDesignSuggestion = {
@@ -35,7 +36,7 @@ function row(startX:number,startY:number,totalWidth:number,prefix:string,rotatio
 }
 
 export function applyAIDesignSuggestion(project:EditorProject,suggestion:AIDesignSuggestion):EditorProject{
-  const preserved=project.objects.filter(object=>object.kind==='wall'||object.kind==='door'||object.kind==='window'||(!isCabinetKind(object.kind)&&object.kind!=='countertop'&&object.kind!=='appliance'));
+  const preserved=project.objects.filter(object=>object.kind==='wall'||object.kind==='door'||object.kind==='window'||isLighting(object)||(!isCabinetKind(object.kind)&&object.kind!=='countertop'&&object.kind!=='appliance'));
   const roomWidth=Math.max(96,inches(project.room.widthM)),roomLength=Math.max(96,inches(project.room.lengthM));
   const runX=Math.min(roomWidth-24,144),runY=Math.min(roomLength-24,132);
   let generated:EditorObject[]=[];
