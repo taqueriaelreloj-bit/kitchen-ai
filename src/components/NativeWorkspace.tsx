@@ -3,6 +3,7 @@ import { PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { EditorObject, EditorProject, Vec2, View2DState } from '../domain/editor';
 import { createObjectDragOrigin, moveObjectByPlanDelta, ObjectDragOrigin } from '../domain/objectMovement';
 import { pan2DView, pinch2DView } from '../domain/touchNavigation';
+import { Native3DWorkspace } from './Native3DWorkspace';
 
 type Props = { project: EditorProject; apply: (project: EditorProject, record?: boolean) => void };
 type GestureState = { mode: 'none'|'pan'|'pinch'; startView: View2DState; startDistance: number; startMidpoint: Vec2 };
@@ -148,13 +149,7 @@ export function NativeWorkspace({ project, apply }: Props) {
     onPanResponderTerminationRequest: () => true,
   }), [project, apply]);
 
-  if (project.viewMode === '3d') return <View style={s.workspace}>
-    <View style={s.native3d}>
-      <Text style={s.native3dTitle}>3D Project Preview</Text>
-      <Text style={s.help}>The complete AI layout, lighting, materials, appliances and hardware remain in the shared project. Desktop web uses the full WebGL renderer.</Text>
-      <View style={s.previewFloor}>{project.objects.filter(object => object.kind !== 'wall').slice(0, 24).map((object, index) => <View key={object.id} style={[s.previewBlock, { width: Math.max(24, Math.min(90, object.widthIn)), height: Math.max(18, Math.min(65, object.heightIn * .55)), backgroundColor: object.color ?? '#D5D2CA', marginLeft: (index % 3) * 8 }]}><Text numberOfLines={1} style={s.previewLabel}>{object.name}</Text></View>)}</View>
-    </View>
-  </View>;
+  if (project.viewMode === '3d') return <Native3DWorkspace project={project} apply={apply} />;
 
   const planTransform = { transformOrigin: [0, 0, 0], transform: [{ translateX: view.pan.x }, { translateY: view.pan.y }, { scale: view.zoom }] } as any;
   return <Pressable accessibilityLabel="Touch 2D kitchen workspace" accessibilityHint="Pinch with two fingers to zoom, drag empty space to pan, or drag an object to move it" onPress={() => apply({ ...project, selectedId: undefined }, false)} style={s.workspace} {...panResponder.panHandlers}>
@@ -180,10 +175,4 @@ const s = StyleSheet.create({
   selected: { borderWidth: 3, borderColor: '#0B785A' },
   touchHint: { position: 'absolute', left: 10, bottom: 10, backgroundColor: '#17211FCC', borderRadius: 8, paddingHorizontal: 9, paddingVertical: 6 },
   touchHintText: { fontSize: 10, color: '#E6EFEC', fontWeight: '800' },
-  help: { fontSize: 13, lineHeight: 19, color: '#5C6B66' },
-  native3d: { flex: 1, padding: 18, backgroundColor: '#DCE3E0' },
-  native3dTitle: { fontSize: 22, fontWeight: '900', color: '#23312D', marginBottom: 6 },
-  previewFloor: { flex: 1, marginTop: 16, borderWidth: 1, borderColor: '#9DAAA6', backgroundColor: '#CAD1CE', padding: 12, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'flex-end' },
-  previewBlock: { borderWidth: 1, borderColor: '#5C6B66', margin: 4, justifyContent: 'center', padding: 3 },
-  previewLabel: { fontSize: 8, fontWeight: '700' },
 });
