@@ -1,0 +1,60 @@
+{
+  "category": "gas-range",
+  "displayName": "Gas Ranges / Estufas de gas",
+  "implementation": "parametric-webgl-box-geometry",
+  "units": "meters",
+  "sourceUnits": "inches",
+  "upAxis": "Y",
+  "origin": "floor-center",
+  "defaultFinishId": "stainless-steel",
+  "finishOrder": [
+    "stainless-steel",
+    "black",
+    "white",
+    "matte-black",
+    "matte-white",
+    "red",
+    "blue",
+    "green",
+    "cream-ivory"
+  ],
+  "models": [
+    {
+      "id": "gas-range-32-4-burner",
+      "widthIn": 32,
+      "heightIn": 36,
+      "depthIn": 28,
+      "burnerCount": 4,
+      "knobCount": 4,
+      "hasCenterGriddle": false,
+      "ovenType": "single",
+      "thumbnail": "thumbnails/gas-range-32-4-burner.svg"
+    },
+    {
+      "id": "gas-range-36-4-burner-griddle",
+      "widthIn": 36,
+      "heightIn": 36,
+      "depthIn": 28,
+      "burnerCount": 4,
+      "knobCount": 5,
+      "hasCenterGriddle": true,
+      "hasGriddleHandle": true,
+      "hasGriddleControlKnob": true,
+      "ovenType": "double-side-by-side",
+      "thumbnail": "thumbnails/gas-range-36-4-burner-griddle.svg"
+    },
+    {
+      "id": "gas-range-42-4-burner-griddle",
+      "widthIn": 42,
+      "heightIn": 36,
+      "depthIn": 28,
+      "burnerCount": 4,
+      "knobCount": 5,
+      "hasCenterGriddle": true,
+      "hasGriddleHandle": true,
+      "hasGriddleControlKnob": true,
+      "ovenType": "single-wide",
+      "thumbnail": "thumbnails/gas-range-42-4-burner-griddle.svg"
+    }
+  ]
+}

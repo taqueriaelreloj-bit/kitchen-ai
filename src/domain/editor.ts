@@ -6,6 +6,9 @@ export type BaseCabinetKind = 'base-cabinet' | 'sink-base' | 'drawer-base' | 'co
 export type WallCabinetKind = 'wall-cabinet' | 'glass-upper';
 export type TallCabinetKind = 'tall-cabinet' | 'pantry-cabinet' | 'oven-cabinet' | 'refrigerator-cabinet';
 export type ObjectKind = 'wall' | BaseCabinetKind | WallCabinetKind | TallCabinetKind | 'island' | 'door' | 'window' | 'appliance' | 'countertop' | 'hardware';
+export type ApplianceType = 'refrigerator' | 'gas-range' | 'dishwasher' | 'generic';
+export type ApplianceFuelType = 'gas' | 'electric' | 'dual-fuel';
+export type ApplianceOvenType = 'single' | 'double-side-by-side' | 'single-wide';
 export type Vec2 = { x: number; y: number };
 export type ToeKick = { enabled: boolean; heightIn: number; recessIn: number; color: string; finish: string };
 export type CabinetHardware = {
@@ -32,6 +35,18 @@ export type EditorObject = {
   finishId?: string;
   wallPaintId?: string;
   material?: string;
+  productId?: string;
+  variantId?: string;
+  applianceType?: ApplianceType;
+  fuelType?: ApplianceFuelType;
+  burnerCount?: number;
+  knobCount?: number;
+  hasCenterGriddle?: boolean;
+  griddleHandle?: boolean;
+  griddleControlKnob?: boolean;
+  ovenType?: ApplianceOvenType;
+  ovenDoorCount?: number;
+  dimensionsLocked?: boolean;
   toeKick?: ToeKick;
   hardware?: CabinetHardware;
 };
@@ -196,6 +211,30 @@ export function migrateProject(raw: unknown): EditorProject | undefined {
     if (isCabinetKind(fresh.kind)) fresh.hardware = normalizeCabinetHardware(object.hardware);
     if (isWallCabinetKind(fresh.kind)) fresh.toeKick = undefined;
     if (fresh.kind === 'wall' && !fresh.wallPaintId) fresh.wallPaintId = wallDefault.id;
+    if (fresh.kind === 'appliance') {
+      const rangeIdentity = [fresh.applianceType ?? '', fresh.productId ?? '', fresh.variantId ?? '', fresh.finishId ?? '', fresh.name].join(' ').toLowerCase();
+      if (fresh.applianceType === 'gas-range' || rangeIdentity.includes('gas-range') || rangeIdentity.includes('gas range')) {
+        const nominalWidth = fresh.widthIn >= 39 ? 42 : fresh.widthIn >= 34 ? 36 : 32;
+        const inferredId = nominalWidth === 42 ? 'gas-range-42-4-burner-griddle' : nominalWidth === 36 ? 'gas-range-36-4-burner-griddle' : 'gas-range-32-4-burner';
+        const validFinishes = ['stainless-steel','black','white','matte-black','matte-white','red','blue','green','cream-ivory'];
+        const finishColors: Record<string,string> = { 'stainless-steel':'#AEB3B7', black:'#111315', white:'#F4F4F2', 'matte-black':'#202124', 'matte-white':'#E9E7E2', red:'#B51F2E', blue:'#1D3F68', green:'#214D3A', 'cream-ivory':'#E8DDC7' };
+        fresh.applianceType = 'gas-range';
+        fresh.productId = fresh.productId ?? fresh.variantId ?? inferredId;
+        fresh.variantId = fresh.variantId ?? fresh.productId;
+        fresh.finishId = validFinishes.includes(fresh.finishId ?? '') ? fresh.finishId : 'stainless-steel';
+        fresh.color = fresh.color ?? finishColors[fresh.finishId ?? 'stainless-steel'];
+        fresh.material = fresh.material ?? (fresh.finishId === 'stainless-steel' ? 'Brushed Stainless Steel' : 'Enamel');
+        fresh.fuelType = 'gas';
+        fresh.burnerCount = fresh.burnerCount ?? 4;
+        fresh.hasCenterGriddle = fresh.hasCenterGriddle ?? nominalWidth >= 36;
+        fresh.griddleHandle = fresh.griddleHandle ?? fresh.hasCenterGriddle;
+        fresh.griddleControlKnob = fresh.griddleControlKnob ?? fresh.hasCenterGriddle;
+        fresh.knobCount = fresh.knobCount ?? (fresh.hasCenterGriddle ? 5 : 4);
+        fresh.ovenType = fresh.ovenType ?? (nominalWidth === 36 ? 'double-side-by-side' : nominalWidth === 42 ? 'single-wide' : 'single');
+        fresh.ovenDoorCount = fresh.ovenDoorCount ?? (fresh.ovenType === 'double-side-by-side' ? 2 : 1);
+        fresh.dimensionsLocked = fresh.dimensionsLocked ?? true;
+      }
+    }
     return fresh;
   });
   return {
@@ -215,7 +254,13 @@ export function migrateProject(raw: unknown): EditorProject | undefined {
 }
 
 export const clampZoom = (zoom: number) => Math.min(2, Math.max(0.25, Math.round(zoom * 100) / 100));
-export function updateObject(project: EditorProject, id: string, patch: Partial<EditorObject>): EditorProject { return { ...project, objects: project.objects.map(object => object.id === id ? { ...object, ...patch } : object), updatedAt: now() }; }
+export function updateObject(project: EditorProject, id: string, patch: Partial<EditorObject>): EditorProject {
+  const source = project.objects.find(object => object.id === id);
+  const safePatch = source?.dimensionsLocked
+    ? { ...patch, widthIn: source.widthIn, heightIn: source.heightIn, depthIn: source.depthIn }
+    : patch;
+  return { ...project, objects: project.objects.map(object => object.id === id ? { ...object, ...safePatch } : object), updatedAt: now() };
+}
 export function duplicateObject(project: EditorProject, id: string): EditorProject { const source = project.objects.find(object => object.id === id); if (!source) return project; const copy: EditorObject = { ...source, id: uid(source.kind), name: `${source.name} Copy`, x: source.x + 18, y: source.y + 18, toeKick: source.toeKick ? { ...source.toeKick } : undefined, hardware: source.hardware ? normalizeCabinetHardware(source.hardware) : undefined }; return { ...project, objects: [...project.objects, copy], selectedId: copy.id, updatedAt: now() }; }
 export function deleteObject(project: EditorProject, id: string): EditorProject { return { ...project, objects: project.objects.filter(object => object.id !== id), selectedId: project.selectedId === id ? undefined : project.selectedId, updatedAt: now() }; }
 
