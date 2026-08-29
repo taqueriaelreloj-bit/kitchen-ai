@@ -21,7 +21,24 @@ jobs:
 
       - name: Reconstruct and apply source patch
         run: |
-          cat .patch/professional3d/chunk-* | base64 --decode > /tmp/professional3d.tar.xz
+          python - <<'PY'
+          from pathlib import Path
+          import base64
+          import re
+
+          chunks = sorted(Path('.patch/professional3d').glob('chunk-*'))
+          if not chunks:
+              raise SystemExit('No professional 3D patch chunks were found.')
+          payload = ''.join(chunk.read_text(encoding='utf-8') for chunk in chunks)
+          payload = ''.join(re.findall(r'[A-Za-z0-9+/=]', payload))
+          padding = (-len(payload)) % 4
+          payload += '=' * padding
+          archive = base64.b64decode(payload, validate=False)
+          target = Path('/tmp/professional3d.tar.xz')
+          target.write_bytes(archive)
+          print(f'Reconstructed {target} from {len(chunks)} chunks ({len(archive)} bytes).')
+          PY
+          xz --test /tmp/professional3d.tar.xz
           tar -xJf /tmp/professional3d.tar.xz
           rm -rf .patch
           rm -f .github/workflows/export-source-for-3d.yml
