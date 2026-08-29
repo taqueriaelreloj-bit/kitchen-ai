@@ -1,0 +1,35 @@
+name: Diagnose gas range merge
+
+on:
+  push:
+    branches: [feature/gas-range-catalog]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/gas-range-catalog
+          fetch-depth: 0
+      - name: Diagnose merge with main
+        run: |
+          git fetch origin main
+          set +e
+          git merge --no-commit --no-ff origin/main
+          result=$?
+          echo "MERGE_RESULT=$result"
+          echo "=== CONFLICT FILES ==="
+          git diff --name-only --diff-filter=U
+          echo "=== STATUS ==="
+          git status --short
+          echo "=== CONFLICT MARKERS ==="
+          for file in $(git diff --name-only --diff-filter=U); do
+            echo "--- $file ---"
+            grep -n -B 8 -A 14 '<<<<<<<\|=======\|>>>>>>>' "$file" || true
+          done
+          exit $result
