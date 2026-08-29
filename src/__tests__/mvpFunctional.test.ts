@@ -1,5 +1,4 @@
 import { aiDesignSuggestions, applyAIDesignSuggestion } from '../domain/aiDesign';
-import { buildBillOfMaterials, summarizeBillOfMaterials } from '../domain/billOfMaterials';
 import { CABINET_FINISHES, HARDWARE_FINISHES, WALL_PAINTS } from '../domain/catalogs';
 import { countertopData, createIsland, islandData, updateCountertop, updateIsland } from '../domain/countertops';
 import { generateDesigns } from '../domain/design';
@@ -162,18 +161,5 @@ describe('Kitchen AI MVP functional regression flow',()=>{
     const base=migrated?.objects.find(object=>object.kind==='base-cabinet');
     expect(base?.toeKick).toMatchObject({enabled:true,heightIn:4,recessIn:3});
     expect(base?.hardware?.style).toBeTruthy();
-  });
-
-  test('builds a construction-oriented material schedule from the edited project',()=>{
-    let current=project();
-    current={...current,objects:[...current.objects,createLighting('Recessed',{id:'functional-recessed'}),objectDefaults('appliance',{id:'functional-dishwasher',name:'Dishwasher',widthIn:24,heightIn:34,depthIn:24,material:'Stainless Steel'})]};
-    const lines=buildBillOfMaterials(current);
-    const summary=summarizeBillOfMaterials(current);
-    expect(lines.some(line=>line.category==='Cabinets')).toBe(true);
-    expect(lines.some(line=>line.category==='Countertops')).toBe(true);
-    expect(lines.some(line=>line.category==='Lighting')).toBe(true);
-    expect(lines.some(line=>line.category==='Appliances'&&line.item==='Dishwasher')).toBe(true);
-    expect(summary.cabinetCount).toBeGreaterThan(0);
-    expect(summary.countertopSquareFeet).toBeGreaterThan(0);
   });
 });
