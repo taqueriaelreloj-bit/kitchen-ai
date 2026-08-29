@@ -51,3 +51,11 @@ jobs:
           path: runtime-preview/*.png
           if-no-files-found: error
           retention-days: 3
+
+      - name: Upload built web application
+        uses: actions/upload-artifact@v4
+        with:
+          name: kitchen-ai-web-dist-preview
+          path: dist/**
+          if-no-files-found: error
+          retention-days: 3
