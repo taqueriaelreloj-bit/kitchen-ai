@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Camera3DState, clampZoom, EditorObject, EditorProject, updateObject, View2DState } from '../domain/editor';
-import { NativeGLViewport } from './NativeGLViewport.native';
+import { NativeSelectableGLViewport } from './NativeSelectableGLViewport.native';
 
 const GRID_SPACING_IN=12;
 const PLAN_SCALE=.38;
@@ -75,7 +75,7 @@ export function NativeWorkspace({project,apply}:Props){
   if(project.viewMode==='3d'){
     return <View accessibilityLabel="3D kitchen touch workspace" style={s.workspace} {...responder.panHandlers}>
       <View style={s.previewHeader}><Text style={s.previewTitle}>3D Kitchen</Text><Text style={s.gestureHint}>Pinch to zoom · Two-finger drag to pan · Use Properties to edit selection</Text></View>
-      <NativeGLViewport project={project} camera={visual3d}/>
+      <NativeSelectableGLViewport project={project} camera={visual3d} onSelect={id=>apply({...project,selectedId:id},false)}/>
     </View>;
   }
 
