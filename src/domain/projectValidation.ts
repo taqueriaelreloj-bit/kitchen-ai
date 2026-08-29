@@ -28,8 +28,8 @@ const OBJECT_KINDS:ObjectKind[]=[
   'appliance','countertop','hardware',
 ];
 const dangerousKeys=new Set(['__proto__','prototype','constructor']);
-const finite=(value:unknown)=>typeof value==='number'&&Number.isFinite(value);
-const text=(value:unknown,max=MAX_TEXT_LENGTH)=>typeof value==='string'&&value.length>0&&value.length<=max;
+const finite=(value:unknown):value is number=>typeof value==='number'&&Number.isFinite(value);
+const text=(value:unknown,max=MAX_TEXT_LENGTH):value is string=>typeof value==='string'&&value.length>0&&value.length<=max;
 const record=(value:unknown):value is Record<string,unknown>=>Boolean(value)&&typeof value==='object'&&!Array.isArray(value);
 
 function findDangerousKey(value:unknown,depth=0):string|undefined{
@@ -47,13 +47,12 @@ function findDangerousKey(value:unknown,depth=0):string|undefined{
 }
 
 function validRoom(value:unknown):value is RoomModel{
-  if(!record(value))return false;
-  if(!text(value.id,200))return false;
-  for(const key of ['widthM','lengthM','heightM'] as const){
-    const dimension=value[key];
-    if(!finite(dimension)||dimension<1||dimension>50)return false;
-  }
-  if(value.confidence!==undefined&&(!finite(value.confidence)||value.confidence<0||value.confidence>1))return false;
+  if(!record(value)||!text(value.id,200))return false;
+  const widthM=value.widthM,lengthM=value.lengthM,heightM=value.heightM;
+  if(!finite(widthM)||!finite(lengthM)||!finite(heightM))return false;
+  if(widthM<1||widthM>50||lengthM<1||lengthM>50||heightM<1||heightM>50)return false;
+  const confidence=value.confidence;
+  if(confidence!==undefined&&(!finite(confidence)||confidence<0||confidence>1))return false;
   if(value.openings!==undefined&&!Array.isArray(value.openings))return false;
   if(value.photos!==undefined&&!Array.isArray(value.photos))return false;
   return true;
@@ -70,12 +69,12 @@ function validDesign(value:unknown):value is KitchenDesign{
 function validObject(value:unknown):value is EditorProject['objects'][number]{
   if(!record(value)||!text(value.id,200)||!text(value.name,MAX_TEXT_LENGTH))return false;
   if(typeof value.kind!=='string'||!OBJECT_KINDS.includes(value.kind as ObjectKind))return false;
-  for(const key of ['x','y','widthIn','depthIn','heightIn','rotation'] as const){
-    if(!finite(value[key]))return false;
-  }
-  if(value.widthIn<0||value.depthIn<0||value.heightIn<0)return false;
-  if(Math.abs(value.x)>100_000||Math.abs(value.y)>100_000||value.widthIn>10_000||value.depthIn>10_000||value.heightIn>10_000)return false;
-  if(value.elevationIn!==undefined&&!finite(value.elevationIn))return false;
+  const x=value.x,y=value.y,widthIn=value.widthIn,depthIn=value.depthIn,heightIn=value.heightIn,rotation=value.rotation;
+  if(!finite(x)||!finite(y)||!finite(widthIn)||!finite(depthIn)||!finite(heightIn)||!finite(rotation))return false;
+  if(widthIn<0||depthIn<0||heightIn<0)return false;
+  if(Math.abs(x)>100_000||Math.abs(y)>100_000||widthIn>10_000||depthIn>10_000||heightIn>10_000)return false;
+  const elevationIn=value.elevationIn;
+  if(elevationIn!==undefined&&!finite(elevationIn))return false;
   if(value.color!==undefined&&typeof value.color!=='string')return false;
   if(value.finishId!==undefined&&typeof value.finishId!=='string')return false;
   if(value.wallPaintId!==undefined&&typeof value.wallPaintId!=='string')return false;

@@ -2,6 +2,7 @@ import { countertopData, islandData } from './countertops';
 import { EditorObject, EditorProject, migrateProject, normalizeCabinetHardware } from './editor';
 import { isLighting, lightingData } from './lighting';
 import { openingData } from './openings';
+import { parseAndValidateProjectJson, ProjectValidationCode } from './projectValidation';
 
 export const PROJECT_FILE_VERSION = 2;
 export const PROJECT_FILE_EXTENSION = '.kitchenai.json';
@@ -20,10 +21,25 @@ export type ProjectExportSummary = {
   updatedAt: string;
 };
 
+export type ProjectParseResult =
+  | { ok:true; project:EditorProject }
+  | { ok:false; code:ProjectValidationCode; message:string };
+
 const isCabinetObject = (object: EditorObject) => object.kind.includes('cabinet') || object.kind === 'sink-base' || object.kind === 'drawer-base' || object.kind === 'glass-upper';
 
 export function serializeProject(project: EditorProject): string { return JSON.stringify(project, null, 2); }
-export function parseProject(serialized: string): EditorProject | undefined { try { return migrateProject(JSON.parse(serialized)); } catch { return undefined; } }
+export function parseProjectDetailed(serialized:string):ProjectParseResult {
+  const validated=parseAndValidateProjectJson(serialized);
+  if(!validated.ok)return validated;
+  const project=migrateProject(validated.value);
+  return project
+    ?{ok:true,project}
+    :{ok:false,code:'invalid-root',message:'The Kitchen AI project could not be migrated.'};
+}
+export function parseProject(serialized: string): EditorProject | undefined {
+  const result=parseProjectDetailed(serialized);
+  return result.ok?result.project:undefined;
+}
 export function projectFileName(project: EditorProject): string { const base = (project.name || 'Kitchen Project').trim().replace(/[^a-z0-9-_]+/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'Kitchen-Project'; return `${base}${PROJECT_FILE_EXTENSION}`; }
 
 export function summarizeProject(project: EditorProject): ProjectExportSummary {
