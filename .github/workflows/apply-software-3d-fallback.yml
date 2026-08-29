@@ -1,0 +1,49 @@
+name: Apply software 3D fallback patch
+
+on:
+  push:
+    branches:
+      - fix/plan-transform-origin
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/plan-transform-origin
+          fetch-depth: 0
+
+      - name: Add compatible 3D fallback
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('src/components/WebGLViewport.web.tsx')
+          text=path.read_text()
+          import_line="import { buildSceneBoxes } from '../domain/geometry';"
+          fallback_import="import { Native3DWorkspace } from './Native3DWorkspace';"
+          if fallback_import not in text:
+              text=text.replace(import_line,import_line+'\n'+fallback_import)
+          marker='  return <View style={styles.root}>'
+          fallback="""  if(renderError)return <View style={styles.root}>\n    <Native3DWorkspace project={project} apply={next=>preview(next)}/>\n    <View pointerEvents=\"none\" style={styles.error}>\n      <Text style={styles.errorTitle}>Software 3D mode</Text>\n      <Text style={styles.errorText}>WebGL is unavailable, so Kitchen AI is showing the compatible interactive 3D preview.</Text>\n      <Text style={styles.errorHelp}>Drag to orbit, pinch or use the mouse to navigate, and double-click an object to focus it.</Text>\n    </View>\n  </View>;\n\n"""
+          if 'Software 3D mode' not in text:
+              if marker not in text:
+                  raise SystemExit('WebGL return marker not found')
+              text=text.replace(marker,fallback+marker,1)
+          path.write_text(text)
+          PY
+
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/WebGLViewport.web.tsx
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "fix: show compatible 3D when WebGL is unavailable"
+          git push origin HEAD:fix/plan-transform-origin
