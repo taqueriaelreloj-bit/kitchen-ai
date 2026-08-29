@@ -8,7 +8,7 @@ import {
 } from './applianceCatalog';
 import { EditorObject, EditorProject, ObjectKind, objectDefaults } from './editor';
 import { OBJECT_SNAP_IN } from './objectMovement';
-import { PLAN_DISPLAY_SCALE, projectDisplayBounds } from './viewFitting';
+import { PLAN_DISPLAY_SCALE, projectPlanBounds } from './viewFitting';
 
 export const KITCHEN_CATALOG_DRAG_MIME = 'application/x-kitchen-ai-catalog-item';
 
@@ -172,11 +172,6 @@ export function parseDragCatalogItem(serialized?: string): DragCatalogItem | und
   }
 }
 
-const visualFootprint = (object: EditorObject) => ({
-  width: Math.max(10, object.widthIn * PLAN_DISPLAY_SCALE),
-  depth: Math.max(8, object.depthIn * PLAN_DISPLAY_SCALE),
-});
-
 const snapCoordinate = (value: number, enabled: boolean) => enabled
   ? Math.round(value / OBJECT_SNAP_IN) * OBJECT_SNAP_IN
   : Math.round(value * 100) / 100;
@@ -188,11 +183,10 @@ export function addDragCatalogItemAtPlanPoint(
 ): EditorProject {
   const object = createDragCatalogObject(itemId);
   if (!object) return project;
-  const footprint = visualFootprint(object);
   const placed: EditorObject = {
     ...object,
-    x: snapCoordinate(point.x - footprint.width / 2, project.view2d.snap),
-    y: snapCoordinate(point.y - footprint.depth / 2, project.view2d.snap),
+    x: snapCoordinate(point.x - object.widthIn / 2, project.view2d.snap),
+    y: snapCoordinate(point.y - object.depthIn / 2, project.view2d.snap),
   };
   return {
     ...project,
@@ -203,7 +197,7 @@ export function addDragCatalogItemAtPlanPoint(
 }
 
 export function addDragCatalogItemNearCenter(project: EditorProject, itemId: string): EditorProject {
-  const bounds = projectDisplayBounds(project);
+  const bounds = projectPlanBounds(project);
   const stagger = (project.objects.length % 5) * 8;
   return addDragCatalogItemAtPlanPoint(project, itemId, {
     x: bounds.centerX + stagger,
@@ -217,8 +211,9 @@ export function workspaceClientPointToPlan(
   workspaceOrigin: { x: number; y: number },
 ) {
   const zoom = Math.max(.01, project.view2d.zoom);
+  const displayScale = zoom * PLAN_DISPLAY_SCALE;
   return {
-    x: (clientPoint.x - workspaceOrigin.x - project.view2d.pan.x) / zoom,
-    y: (clientPoint.y - workspaceOrigin.y - project.view2d.pan.y) / zoom,
+    x: (clientPoint.x - workspaceOrigin.x - project.view2d.pan.x) / displayScale,
+    y: (clientPoint.y - workspaceOrigin.y - project.view2d.pan.y) / displayScale,
   };
 }
