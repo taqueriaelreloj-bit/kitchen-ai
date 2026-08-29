@@ -1,65 +1,110 @@
-import { countertopData, islandData } from './countertops';
+import { countertopData, countertopMaterial } from './countertops';
 import {
-  EditorObject,
-  EditorProject,
-  isBaseCabinetKind,
-  isCabinetKind,
-  isTallCabinetKind,
-  normalizeCabinetHardware,
+  EditorObject, EditorProject, isBaseCabinetKind, isBaseLikeKind, isCabinetKind,
 } from './editor';
+import { isLighting, lightingData } from './lighting';
+import { openingData } from './openings';
 
-export type BillOfMaterialsSummary={
-  countertopSquareFeet:number;
-  hardwareCount:number;
-  wallPaintSquareFeet:number;
+export type MaterialUnit = 'ea'|'lin ft'|'sq ft';
+export type MaterialLine = {
+  category: 'Cabinets'|'Hardware'|'Toe Kick'|'Countertops'|'Wall Paint'|'Appliances'|'Lighting'|'Openings';
+  item: string;
+  quantity: number;
+  unit: MaterialUnit;
+  notes: string;
 };
 
-const squareFeet=(widthIn:number,depthIn:number)=>Math.max(0,widthIn)*Math.max(0,depthIn)/144;
-const rounded=(value:number)=>Math.round(Math.max(0,value)*100)/100;
+export type BillOfMaterialsSummary = {
+  cabinetCount: number;
+  hardwareCount: number;
+  toeKickLinearFeet: number;
+  countertopSquareFeet: number;
+  wallPaintSquareFeet: number;
+  applianceCount: number;
+  lightingCount: number;
+};
 
-function modeledCountertopArea(object:EditorObject){
-  if(object.kind==='countertop'){
-    const spec=countertopData(object);
-    return squareFeet(object.widthIn,object.depthIn)+squareFeet(object.widthIn,spec.backsplashHeightIn);
+const round=(value:number,places=2)=>{
+  const factor=10**places;
+  return Math.round(value*factor)/factor;
+};
+const label=(value:string)=>value.replace(/-/g,' ').replace(/\b\w/g,character=>character.toUpperCase());
+const hardwareCount=(object:EditorObject)=>{
+  if(!object.hardware||object.hardware.style==='No Hardware')return 0;
+  if(object.kind==='drawer-base')return 3;
+  if(object.kind==='island')return Math.max(2,Math.round(object.widthIn/24));
+  return object.widthIn>=30?2:1;
+};
+
+function group(lines:MaterialLine[]):MaterialLine[]{
+  const grouped=new Map<string,MaterialLine>();
+  for(const line of lines){
+    const key=[line.category,line.item,line.unit,line.notes].join('|');
+    const existing=grouped.get(key);
+    if(existing)existing.quantity=round(existing.quantity+line.quantity);
+    else grouped.set(key,{...line,quantity:round(line.quantity)});
   }
-  if(object.kind==='island'){
-    const spec=countertopData(object),island=islandData(object);
-    let area=squareFeet(object.widthIn+spec.overhangSideIn*2,object.depthIn+spec.overhangFrontIn+island.seatingOverhangIn);
-    if(island.waterfallLeft)area+=squareFeet(object.depthIn,object.heightIn);
-    if(island.waterfallRight)area+=squareFeet(object.depthIn,object.heightIn);
-    return area;
-  }
-  if(isBaseCabinetKind(object.kind))return squareFeet(object.widthIn,object.depthIn+1);
-  return 0;
+  return [...grouped.values()].sort((a,b)=>a.category.localeCompare(b.category)||a.item.localeCompare(b.item));
 }
 
-function hardwareUnits(object:EditorObject){
-  if(!isCabinetKind(object.kind))return 0;
-  const hardware=normalizeCabinetHardware(object.hardware);
-  if(hardware.style==='No Hardware')return 0;
-  if(object.kind==='drawer-base')return Math.max(2,Math.ceil(object.heightIn/10));
-  if(object.kind==='island')return Math.max(2,Math.ceil(object.widthIn/24));
-  if(isTallCabinetKind(object.kind))return Math.max(2,Math.ceil(object.widthIn/18));
-  return Math.max(1,Math.ceil(object.widthIn/24));
+function wallPaintArea(project:EditorProject,wall:EditorObject){
+  const gross=wall.widthIn*wall.heightIn;
+  const openings=project.objects.filter(object=>{
+    if(object.kind!=='door'&&object.kind!=='window')return false;
+    return openingData(object).parentWallId===wall.id;
+  }).reduce((total,opening)=>total+opening.widthIn*opening.heightIn,0);
+  return Math.max(0,gross-openings)/144;
 }
 
-function wallPaintArea(project:EditorProject){
-  const squareMetersToSquareFeet=10.7639104167;
-  const gross=2*(project.room.widthM+project.room.lengthM)*project.room.heightM*squareMetersToSquareFeet;
-  const roomOpeningArea=project.room.openings.reduce((total,opening)=>{
-    const assumedHeightM=opening.type==='door'?2.032:1.22;
-    return total+opening.widthM*assumedHeightM*squareMetersToSquareFeet;
-  },0);
-  const modeledOpeningArea=project.objects
-    .filter(object=>object.kind==='door'||object.kind==='window')
-    .reduce((total,object)=>total+squareFeet(object.widthIn,object.heightIn),0);
-  return gross-(project.room.openings.length?roomOpeningArea:modeledOpeningArea);
+export function buildBillOfMaterials(project:EditorProject):MaterialLine[]{
+  const lines:MaterialLine[]=[];
+  for(const object of project.objects){
+    if(isCabinetKind(object.kind)){
+      lines.push({category:'Cabinets',item:label(object.kind),quantity:1,unit:'ea',notes:[object.finishId,object.material].filter(Boolean).join(' · ')});
+      const pulls=hardwareCount(object);
+      if(pulls>0)lines.push({category:'Hardware',item:object.hardware?.style??'Cabinet Hardware',quantity:pulls,unit:'ea',notes:[object.hardware?.size,object.hardware?.finishId,object.hardware?.position].filter(Boolean).join(' · ')});
+      if(isBaseLikeKind(object.kind)&&object.toeKick?.enabled)lines.push({category:'Toe Kick',item:'Cabinet Toe Kick',quantity:object.widthIn/12,unit:'lin ft',notes:`${object.toeKick.heightIn} in high · ${object.toeKick.recessIn} in recess · ${object.toeKick.finish}`});
+    }
+
+    if(isBaseCabinetKind(object.kind)||object.kind==='island'||object.kind==='countertop'){
+      const spec=countertopData(object),material=countertopMaterial(object);
+      const width=object.widthIn+spec.overhangSideIn*2;
+      const depth=object.depthIn+spec.overhangFrontIn;
+      lines.push({category:'Countertops',item:material.name,quantity:(width*depth)/144,unit:'sq ft',notes:`${spec.thicknessIn} in · ${spec.edgeProfile}${spec.sinkCutout?' · sink cutout':''}${spec.cooktopCutout?' · cooktop cutout':''}`});
+      if(spec.backsplashHeightIn>0)lines.push({category:'Countertops',item:`${material.name} Backsplash`,quantity:(width*spec.backsplashHeightIn)/144,unit:'sq ft',notes:`${spec.backsplashHeightIn} in high`});
+    }
+
+    if(object.kind==='wall')lines.push({category:'Wall Paint',item:object.wallPaintId?label(object.wallPaintId):'Wall Paint',quantity:wallPaintArea(project,object),unit:'sq ft',notes:object.color??''});
+
+    if(object.kind==='appliance'&&!isLighting(object))lines.push({category:'Appliances',item:object.name,quantity:1,unit:'ea',notes:[object.material,`${object.widthIn} × ${object.depthIn} × ${object.heightIn} in`].filter(Boolean).join(' · ')});
+
+    if(isLighting(object)){
+      const light=lightingData(object);
+      lines.push({category:'Lighting',item:`${light.type} Light`,quantity:1,unit:'ea',notes:`${light.colorTemperatureK}K · ${light.intensityPercent}%${light.enabled?'':' · Off'}`});
+    }
+
+    if(object.kind==='door'||object.kind==='window')lines.push({category:'Openings',item:label(object.kind),quantity:1,unit:'ea',notes:`${object.widthIn} × ${object.heightIn} in${openingData(object).parentWallId?` · wall ${openingData(object).parentWallId}`:' · unattached'}`});
+  }
+  return group(lines);
 }
 
 export function summarizeBillOfMaterials(project:EditorProject):BillOfMaterialsSummary{
-  return{
-    countertopSquareFeet:rounded(project.objects.reduce((total,object)=>total+modeledCountertopArea(object),0)),
-    hardwareCount:project.objects.reduce((total,object)=>total+hardwareUnits(object),0),
-    wallPaintSquareFeet:rounded(wallPaintArea(project)),
+  const lines=buildBillOfMaterials(project);
+  const sum=(category:MaterialLine['category'],unit:MaterialUnit)=>round(lines.filter(line=>line.category===category&&line.unit===unit).reduce((total,line)=>total+line.quantity,0));
+  return {
+    cabinetCount:sum('Cabinets','ea'),
+    hardwareCount:sum('Hardware','ea'),
+    toeKickLinearFeet:sum('Toe Kick','lin ft'),
+    countertopSquareFeet:sum('Countertops','sq ft'),
+    wallPaintSquareFeet:sum('Wall Paint','sq ft'),
+    applianceCount:sum('Appliances','ea'),
+    lightingCount:sum('Lighting','ea'),
   };
+}
+
+const csvCell=(value:string|number)=>`"${String(value).replace(/"/g,'""')}"`;
+export function billOfMaterialsCsv(project:EditorProject):string{
+  const header=['Category','Item','Quantity','Unit','Notes'];
+  const rows=buildBillOfMaterials(project).map(line=>[line.category,line.item,line.quantity,line.unit,line.notes]);
+  return [header,...rows].map(row=>row.map(csvCell).join(',')).join('\n');
 }
