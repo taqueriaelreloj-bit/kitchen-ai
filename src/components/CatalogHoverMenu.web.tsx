@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import {
   DRAG_CATALOG_CATEGORIES,
   DragCatalogCategoryId,
@@ -61,6 +61,10 @@ function ItemPreview({ item }: { item: DragCatalogItem }) {
 }
 
 export function CatalogHoverMenu({ project, apply, preview }: Props) {
+  const {width}=useWindowDimensions();
+  const compact=width<1120;
+  const veryNarrow=width<760;
+  const flyoutWidth=Math.min(612,Math.max(340,width-24));
   const [activeCategory, setActiveCategory] = useState<DragCatalogCategoryId>();
   const [draggingId, setDraggingId] = useState<string>();
   const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -101,7 +105,7 @@ export function CatalogHoverMenu({ project, apply, preview }: Props) {
 
   return <View style={styles.layer}>
     <View style={styles.bar}>
-      <View style={styles.intro}><Text style={styles.introTitle}>Product Catalog</Text><Text style={styles.introHelp}>Hover a category · drag an item into the plan</Text></View>
+      <View style={[styles.intro,compact&&styles.introHidden]}><Text style={styles.introTitle}>Product Catalog</Text><Text style={styles.introHelp}>Hover a category · drag an item into the plan</Text></View>
       <AnyView style={styles.categories}>
         {DRAG_CATALOG_CATEGORIES.map((category, index) => {
           const active = activeCategory === category.id;
@@ -117,14 +121,14 @@ export function CatalogHoverMenu({ project, apply, preview }: Props) {
               accessibilityState={{ expanded: active }}
               accessibilityLabel={`${category.label} catalog, ${category.items.length} items`}
               onPress={() => active ? setActiveCategory(undefined) : open(category.id)}
-              style={[styles.categoryButton, active && styles.categoryButtonActive]}
+              style={[styles.categoryButton,veryNarrow&&styles.categoryButtonNarrow, active && styles.categoryButtonActive]}
             >
-              <Text style={[styles.categoryIcon, active && styles.categoryTextActive]}>{category.icon}</Text>
-              <View style={styles.categoryCopy}><Text style={[styles.categoryLabel, active && styles.categoryTextActive]}>{category.label}</Text><Text style={[styles.categoryCount, active && styles.categoryCountActive]}>{category.items.length} available</Text></View>
-              <Text style={[styles.chevron, active && styles.categoryTextActive]}>⌄</Text>
+              <Text style={[styles.categoryIcon,veryNarrow&&styles.categoryIconNarrow, active && styles.categoryTextActive]}>{category.icon}</Text>
+              <View style={styles.categoryCopy}><Text numberOfLines={1} style={[styles.categoryLabel,veryNarrow&&styles.categoryLabelNarrow, active && styles.categoryTextActive]}>{category.label}</Text>{!veryNarrow&&<Text numberOfLines={1} style={[styles.categoryCount, active && styles.categoryCountActive]}>{category.items.length} available</Text>}</View>
+              <Text style={[styles.chevron,veryNarrow&&styles.chevronNarrow, active && styles.categoryTextActive]}>⌄</Text>
             </Pressable>
-            {active && <View style={[styles.flyout, alignRight && styles.flyoutRight]}>
-              <View style={styles.flyoutHeader}><View><Text style={styles.flyoutTitle}>{category.label}</Text><Text style={styles.flyoutHelp}>{category.helper}</Text></View><View style={styles.dragBadge}><Text style={styles.dragBadgeText}>DRAG TO PLACE</Text></View></View>
+            {active && <View style={[styles.flyout,{width:flyoutWidth}, alignRight && styles.flyoutRight]}>
+              <View style={styles.flyoutHeader}><View style={styles.flyoutHeaderCopy}><Text style={styles.flyoutTitle}>{category.label}</Text><Text numberOfLines={1} style={styles.flyoutHelp}>{category.helper}</Text></View><View style={styles.dragBadge}><Text style={styles.dragBadgeText}>DRAG TO PLACE</Text></View></View>
               <ScrollView style={styles.flyoutScroll} contentContainerStyle={styles.itemGrid} showsVerticalScrollIndicator>
                 {category.items.map(item => <AnyPressable
                   key={item.id}
@@ -154,28 +158,34 @@ export function CatalogHoverMenu({ project, apply, preview }: Props) {
 }
 
 const styles = StyleSheet.create({
-  layer: { position: 'relative', zIndex: 80, overflow: 'visible' },
+  layer: { position: 'relative', zIndex: 80, overflow: 'visible', flexShrink:0 },
   bar: { minHeight: 52, backgroundColor: '#24332F', borderTopWidth: 1, borderTopColor: '#3A4D47', borderBottomWidth: 1, borderBottomColor: '#14201D', flexDirection: 'row', alignItems: 'stretch', overflow: 'visible' },
-  intro: { width: 190, paddingHorizontal: 12, justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#3A4D47' },
+  intro: { width: 190, minWidth:190, maxWidth:190, flexShrink:0, paddingHorizontal: 12, justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#3A4D47' },
+  introHidden:{display:'none'},
   introTitle: { fontSize: 12, fontWeight: '900', color: '#F5F8F7', textTransform: 'uppercase' },
   introHelp: { fontSize: 9, lineHeight: 12, color: '#B8C6C2', marginTop: 2 },
-  categories: { flex: 1, flexDirection: 'row', alignItems: 'stretch', paddingHorizontal: 5, overflow: 'visible' },
-  categoryWrap: { position: 'relative', flex: 1, minWidth: 110, maxWidth: 190, justifyContent: 'center', overflow: 'visible' },
+  categories: { flex: 1, minWidth:0, flexDirection: 'row', alignItems: 'stretch', paddingHorizontal: 5, overflow: 'visible' },
+  categoryWrap: { position: 'relative', flex: 1, minWidth: 105, maxWidth: 210, justifyContent: 'center', overflow: 'visible' },
   categoryButton: { width: '100%', minHeight: 50, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 8, borderLeftWidth: 1, borderLeftColor: '#344640' },
+  categoryButtonNarrow:{paddingHorizontal:5,gap:4},
   categoryButtonActive: { backgroundColor: '#DDEEE8', borderLeftColor: '#6CA18F' },
   categoryIcon: { width: 22, textAlign: 'center', fontSize: 21, color: '#D6E2DE' },
+  categoryIconNarrow:{width:18,fontSize:17},
   categoryCopy: { flex: 1, minWidth: 0 },
   categoryLabel: { fontSize: 11, fontWeight: '900', color: '#F1F6F4' },
+  categoryLabelNarrow:{fontSize:9},
   categoryCount: { fontSize: 8, fontWeight: '700', color: '#9FB0AA', marginTop: 1 },
   categoryCountActive: { color: '#4F6F65' },
   categoryTextActive: { color: '#154D3D' },
   chevron: { marginLeft: 'auto', fontSize: 13, color: '#B9C7C3' },
-  flyout: { position: 'absolute', top: 50, left: 0, width: 612, maxHeight: 430, zIndex: 120, borderRadius: 12, borderWidth: 1, borderColor: '#AFC0BA', backgroundColor: '#F7FAF9', shadowColor: '#000000', shadowOpacity: .25, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 20, overflow: 'hidden' },
+  chevronNarrow:{fontSize:10},
+  flyout: { position: 'absolute', top: 50, left: 0, maxHeight: 430, zIndex: 120, borderRadius: 12, borderWidth: 1, borderColor: '#AFC0BA', backgroundColor: '#F7FAF9', shadowColor: '#000000', shadowOpacity: .25, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 20, overflow: 'hidden' },
   flyoutRight: { left: undefined, right: 0 },
   flyoutHeader: { minHeight: 58, paddingHorizontal: 13, paddingVertical: 9, backgroundColor: '#E8F0ED', borderBottomWidth: 1, borderBottomColor: '#C5D2CD', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  flyoutHeaderCopy:{flex:1,minWidth:0},
   flyoutTitle: { fontSize: 16, fontWeight: '900', color: '#1C2E28' },
   flyoutHelp: { fontSize: 10, color: '#5D6D67', marginTop: 2 },
-  dragBadge: { borderRadius: 999, backgroundColor: '#315F55', paddingHorizontal: 9, paddingVertical: 5 },
+  dragBadge: { flexShrink:0,borderRadius: 999, backgroundColor: '#315F55', paddingHorizontal: 9, paddingVertical: 5 },
   dragBadgeText: { fontSize: 8, fontWeight: '900', color: '#FFFFFF' },
   flyoutScroll: { maxHeight: 370 },
   itemGrid: { padding: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
