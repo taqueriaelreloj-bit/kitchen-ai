@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { layoutIssueCounts, validateKitchenLayout } from '../domain/designValidation';
-import { clampZoom, deleteObject, EditorProject, reset2DView, reset3DView } from '../domain/editor';
+import { clampZoom, deleteObject, EditorProject, reset2DView } from '../domain/editor';
 import { nudgeSelectedObject } from '../domain/selectionCommands';
 import { center2DView, center3DCamera, fit2DView, fit3DCamera } from '../domain/viewFitting';
 import { useEditorHistory } from '../hooks/useEditorHistory';
@@ -36,13 +36,30 @@ export function EditorShell({initialProject,onProjectChange,onExit}:{initialProj
     width:Math.max(320,viewportWidth-(maximized?24:toolbarWidth+leftPanelWidth+(propertiesDocked?290:0)+24)),
     height:Math.max(240,viewportHeight-202),
   });
-  const fit=()=>project.viewMode==='2d'?preview({...project,view2d:fit2DView(project,editorViewport())}):preview({...project,camera3d:fit3DCamera(project)});
+  const fit=()=>project.viewMode==='2d'?preview({...project,view2d:fit2DView(project,editorViewport())}):preview({...project,camera3d:fit3DCamera(project,editorViewport())});
   const center=()=>project.viewMode==='2d'?preview({...project,view2d:center2DView(project,editorViewport())}):preview({...project,camera3d:center3DCamera(project)});
-  const reset=()=>preview(project.viewMode==='2d'?reset2DView(project):reset3DView(project));
+  const reset=()=>{
+    if(project.viewMode==='2d'){preview(reset2DView(project));return;}
+    const resetProject={...project,camera3d:{...project.camera3d,yaw:-28,pitch:32}};
+    preview({...project,camera3d:fit3DCamera(resetProject,editorViewport())});
+  };
   const fullscreen=async()=>{try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen();else await document.exitFullscreen();}catch{return;}};
   const chooseTool=(next:Tool)=>{setAiOpen(false);setCheckOpen(false);setTool(next);};
   const openAI=()=>{setCheckOpen(false);setAiOpen(true);};
   const openCheck=()=>{setAiOpen(false);setCheckOpen(true);};
+  const openImportedProject=(next:EditorProject)=>{
+    const viewport=editorViewport();
+    const framed:EditorProject={
+      ...next,
+      selectedId:undefined,
+      viewMode:'2d',
+      view2d:fit2DView(next,viewport),
+      camera3d:fit3DCamera(next,viewport),
+    };
+    setAiOpen(false);setCheckOpen(false);setTool('Plan');setTransformOpen(false);setRightOpen(false);
+    apply(framed);
+  };
+  const panelApply=(next:EditorProject,record=true)=>tool==='Project'?openImportedProject(next):apply(next,record);
   const layoutLabel=layoutCounts.errors?`Layout ${layoutCounts.errors}E`:layoutCounts.warnings?`Layout ${layoutCounts.warnings}W`:'Layout ✓';
   const selectedStatus=selected?`${selected.name} · X ${Math.round(selected.x*10)/10} in · Y ${Math.round(selected.y*10)/10} in · `:'';
 
@@ -80,7 +97,7 @@ export function EditorShell({initialProject,onProjectChange,onExit}:{initialProj
     <CatalogHoverMenu project={project} apply={apply} preview={preview}/>
     <View style={s.main}>
       {!maximized&&<ScrollView style={[s.toolbar,compact&&s.toolbarCompact,narrow&&s.toolbarNarrow]} contentContainerStyle={s.toolbarContent}>{TOOLS.map(item=><ToolButton key={item} tool={item} active={!aiOpen&&!checkOpen&&tool===item} onPress={()=>chooseTool(item)}/>)}</ScrollView>}
-      {!maximized&&<View style={[s.leftPanel,compact&&s.leftPanelCompact,narrow&&s.leftPanelNarrow]}>{checkOpen?<LayoutCheckPanel project={project} apply={apply}/>:aiOpen?<AIDesignPanel project={project} apply={next=>apply(next)}/>:<ToolPanel tool={tool} project={project} selected={selected} apply={apply} onHome={onExit}/>}</View>}
+      {!maximized&&<View style={[s.leftPanel,compact&&s.leftPanelCompact,narrow&&s.leftPanelNarrow]}>{checkOpen?<LayoutCheckPanel project={project} apply={apply}/>:aiOpen?<AIDesignPanel project={project} apply={next=>apply(next)}/>:<ToolPanel tool={tool} project={project} selected={selected} apply={panelApply} onHome={onExit}/>}</View>}
       <View style={s.center}>
         <View style={s.workspaceHeader}><Text numberOfLines={1} style={s.workspaceTitle}>{project.viewMode==='2d'?'2D Plan':'3D WebGL Kitchen'}</Text><ScrollView horizontal style={s.headerScroll} showsHorizontalScrollIndicator={false} contentContainerStyle={s.headerActions}>{project.viewMode==='2d'&&<><Button label="Zoom −" onPress={()=>preview({...project,view2d:{...project.view2d,zoom:clampZoom(project.view2d.zoom-.1)}})}/><Text style={s.zoom}>{Math.round(project.view2d.zoom*100)}%</Text><Button label="Zoom +" onPress={()=>preview({...project,view2d:{...project.view2d,zoom:clampZoom(project.view2d.zoom+.1)}})}/><Button label="Grid" active={project.view2d.grid} onPress={()=>preview({...project,view2d:{...project.view2d,grid:!project.view2d.grid}})}/><Button label="Measurements" active={project.view2d.measurements} onPress={()=>preview({...project,view2d:{...project.view2d,measurements:!project.view2d.measurements}})}/><Button label="Snap" active={project.view2d.snap} onPress={()=>preview({...project,view2d:{...project.view2d,snap:!project.view2d.snap}})}/></>}<Button label="Fit" onPress={fit}/><Button label="Center" onPress={center}/><Button label="Reset" onPress={reset}/><Button label="Fullscreen" onPress={fullscreen}/><Button label={maximized?'Restore':'Maximize'} onPress={()=>setMaximized(!maximized)}/><Button label={rightOpen?'Hide Properties':'Properties'} onPress={()=>setRightOpen(!rightOpen)}/><Button label="Transform" active={Boolean(selected&&transformOpen)} disabled={!selected} onPress={()=>setTransformOpen(!transformOpen)}/></ScrollView></View>
         <View style={s.workspace}>{project.viewMode==='2d'?<Workspace2D project={project} preview={preview} apply={apply} commitHistory={commitHistory}/>:<WebGLViewport project={project} preview={preview}/>} {selected&&transformOpen&&<View style={s.quickTransform}><SelectionTransformPanel project={project} selected={selected} apply={apply}/></View>}</View>

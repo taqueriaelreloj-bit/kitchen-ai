@@ -1,5 +1,5 @@
 import { EditorObject } from './editor';
-import { Bounds2D, objectDisplayBounds } from './viewFitting';
+import { Bounds2D, objectPlanBounds as objectBoundsInches } from './viewFitting';
 
 export type AlignmentGuide = {
   axis: 'x' | 'y';
@@ -26,7 +26,7 @@ const preciseBounds=(bounds:Bounds2D):Bounds2D=>({
 });
 
 export function objectPlanBounds(object:EditorObject,x=object.x,y=object.y):Bounds2D{
-  return preciseBounds(objectDisplayBounds(x===object.x&&y===object.y?object:{...object,x,y}));
+  return preciseBounds(objectBoundsInches(x===object.x&&y===object.y?object:{...object,x,y}));
 }
 
 const rangesNear=(aStart:number,aEnd:number,bStart:number,bEnd:number,maximumGap=36)=>Math.max(aStart,bStart)-Math.min(aEnd,bEnd)<=maximumGap;

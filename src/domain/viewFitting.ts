@@ -2,7 +2,14 @@ import { Camera3DState, clampZoom, EditorObject, EditorProject, View2DState } fr
 
 export type ViewportSize = { width: number; height: number };
 export type Bounds2D = { left: number; top: number; right: number; bottom: number; width: number; height: number; centerX: number; centerY: number };
-export const PLAN_DISPLAY_SCALE = .45;
+
+// Plan object coordinates and dimensions are stored in real inches. The web
+// canvas converts both through the same scale so 2D and 3D share one source of
+// truth. Two pixels per inch keeps a 10–12 ft kitchen leg readable at 100% and
+// lets the existing 25–200% zoom range cover compact and large rooms.
+export const PLAN_DISPLAY_SCALE = 2;
+export const planInchesToDisplay = (value: number) => value * PLAN_DISPLAY_SCALE;
+export const displayToPlanInches = (value: number) => value / PLAN_DISPLAY_SCALE;
 
 const finite = (value: number, fallback: number) => Number.isFinite(value) ? value : fallback;
 const safeViewport = (viewport: ViewportSize) => ({ width: Math.max(120, finite(viewport.width, 800)), height: Math.max(120, finite(viewport.height, 600)) });
@@ -21,10 +28,16 @@ function rotatedBounds(x: number, y: number, width: number, height: number, rota
 }
 
 export function objectDisplayBounds(object: EditorObject): Bounds2D {
-  const width = Math.max(10, object.widthIn * PLAN_DISPLAY_SCALE);
+  const width = Math.max(10, planInchesToDisplay(object.widthIn));
   const depthMinimum = object.kind === 'wall' ? 4 : 8;
-  const depth = Math.max(depthMinimum, object.depthIn * PLAN_DISPLAY_SCALE);
-  return rotatedBounds(object.x, object.y, width, depth, object.rotation);
+  const depth = Math.max(depthMinimum, planInchesToDisplay(object.depthIn));
+  return rotatedBounds(
+    planInchesToDisplay(object.x),
+    planInchesToDisplay(object.y),
+    width,
+    depth,
+    object.rotation,
+  );
 }
 
 export function objectPlanBounds(object: EditorObject): Bounds2D {
@@ -78,16 +91,26 @@ export function center2DView(project: EditorProject, viewportValue: ViewportSize
   };
 }
 
-const clampDistance = (distance: number) => Math.min(1100, Math.max(180, distance));
+const clampDistance = (distance: number) => Math.min(1100, Math.max(120, distance));
 
-export function fit3DCamera(project: EditorProject): Camera3DState {
+export function fit3DCamera(project: EditorProject, viewportValue: ViewportSize = { width: 960, height: 640 }): Camera3DState {
+  const viewport = safeViewport(viewportValue);
   const bounds = projectPlanBounds(project);
   const maximumHeight = Math.max(36, ...project.objects.map(object => (object.elevationIn ?? 0) + object.heightIn));
-  const span = Math.max(bounds.width, bounds.height);
+  const halfWidth = Math.max(24, bounds.width / 2);
+  const halfDepth = Math.max(24, bounds.height / 2);
+  const halfHeight = Math.max(18, maximumHeight / 2);
+  const radius = Math.hypot(halfWidth, halfDepth, halfHeight);
+  const verticalHalfFov = Math.PI / 8; // 45° vertical field of view.
+  const aspect = Math.max(.35, viewport.width / viewport.height);
+  const horizontalHalfFov = Math.atan(Math.tan(verticalHalfFov) * aspect);
+  const limitingHalfFov = Math.max(.2, Math.min(verticalHalfFov, horizontalHalfFov));
+  const distance = clampDistance(radius / Math.sin(limitingHalfFov) * 1.18);
   return {
     ...project.camera3d,
     target: { x: bounds.centerX, y: bounds.centerY },
-    distance: clampDistance(span * 3.2 + maximumHeight * 1.8),
+    distance,
+    pitch: 32,
   };
 }
 
