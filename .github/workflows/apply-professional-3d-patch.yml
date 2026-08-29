@@ -21,6 +21,9 @@ jobs:
 
       - name: Reconstruct and apply source patch
         run: |
+          echo 'Chunk sizes and hashes:'
+          wc -c .patch/professional3d/chunk-*
+          sha256sum .patch/professional3d/chunk-*
           python - <<'PY'
           from pathlib import Path
           import base64
@@ -38,6 +41,7 @@ jobs:
           target.write_bytes(archive)
           print(f'Reconstructed {target} from {len(chunks)} chunks ({len(archive)} bytes).')
           PY
+          sha256sum /tmp/professional3d.tar.xz
           xz --test /tmp/professional3d.tar.xz
           tar -xJf /tmp/professional3d.tar.xz
           rm -rf .patch
