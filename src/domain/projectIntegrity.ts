@@ -21,7 +21,7 @@ export type IntegrityIssue={
 };
 export type CascadeDeleteResult={project:EditorProject;removedIds:string[]};
 
-type OpeningObject=EditorObject&{openingSpec?:Record<string,unknown>};
+type OpeningObject=EditorObject&{parentWallId?:string;wallOffsetIn?:number};
 const finite=(value:number)=>Number.isFinite(value);
 const now=()=>new Date().toISOString();
 
@@ -92,7 +92,7 @@ export function repairProjectIntegrity(project:EditorProject):EditorProject{
     const data=openingData(object);
     if(!data.parentWallId||walls.has(data.parentWallId))return object;
     const opening=object as OpeningObject;
-    return{...object,openingSpec:{...(opening.openingSpec??{}),...data,parentWallId:undefined}} as EditorObject;
+    return{...opening,parentWallId:undefined} as EditorObject;
   })};
   for(const object of repaired.objects){
     if(object.kind!=='door'&&object.kind!=='window')continue;
