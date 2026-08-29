@@ -93,8 +93,7 @@ function openingClearZones(project:EditorProject):OpeningZone[]{
   return zones;
 }
 
-function clearCabinetryForOpenings(objects:EditorObject[],project:EditorProject):EditorObject[]{
-  const zones=openingClearZones(project);
+function clearCabinetryForOpenings(objects:EditorObject[],zones:OpeningZone[]):EditorObject[]{
   if(!zones.length)return objects;
   return objects.filter(object=>{
     if(!isCabinetKind(object.kind))return true;
@@ -113,50 +112,70 @@ function appliance(kind:'Refrigerator'|'Range',placement:Placement):EditorObject
     : objectDefaults('appliance',{id:'ai-range',name:'Range',widthIn:30,depthIn:28,heightIn:36,color:'#555B5C',material:'Stainless Steel',...placement});
 }
 
-function choosePlacement(kind:'Refrigerator'|'Range',candidates:Placement[],objects:EditorObject[]):EditorObject{
-  const sinks=objects.filter(object=>object.kind==='sink-base');
+const uniquePlacements=(items:Placement[])=>items.filter((item,index)=>items.findIndex(other=>other.x===item.x&&other.y===item.y&&other.rotation===item.rotation)===index);
+function northRunPlacements(widthIn:number,runX:number,preferredX:number,y=120):Placement[]{
+  return uniquePlacements([
+    {x:preferredX,y,rotation:0},
+    {x:120+Math.max(0,(runX-widthIn)/2),y,rotation:0},
+    {x:120,y,rotation:0},
+    {x:120+Math.max(0,runX-widthIn),y,rotation:0},
+  ]);
+}
+function verticalRunPlacements(widthIn:number,runY:number,preferredY:number,x=120):Placement[]{
+  const length=Math.max(60,runY-36);
+  return uniquePlacements([
+    {x,y:preferredY,rotation:90},
+    {x,y:150+Math.max(0,(length-widthIn)/2),rotation:90},
+    {x,y:150,rotation:90},
+    {x,y:150+Math.max(0,length-widthIn),rotation:90},
+  ]);
+}
+
+function corePlacementCandidates(kind:'Refrigerator'|'Range',layout:AILayoutType,runX:number,runY:number):Placement[]{
+  if(kind==='Refrigerator'){
+    if(layout==='U-Shape')return verticalRunPlacements(36,runY,150+Math.max(12,runY-36));
+    return northRunPlacements(36,runX,120+Math.max(0,runX-36));
+  }
+  if(layout==='L-Shape')return verticalRunPlacements(30,runY,150+Math.max(12,Math.min(runY-30,runY*.48)));
+  if(layout==='Galley')return northRunPlacements(30,runX,120+Math.max(18,Math.min(runX-30,runX*.45)),240);
+  if(layout==='U-Shape')return northRunPlacements(30,runX,120+Math.max(36,Math.min(runX-30,runX*.55)));
+  return northRunPlacements(30,runX,120);
+}
+
+function choosePlacement(kind:'Refrigerator'|'Range',candidates:Placement[],zones:OpeningZone[],occupied:EditorObject[]=[]):EditorObject{
+  const forbidden=zones.map(zone=>zone.area);
   for(const candidate of candidates){
-    const proposed=appliance(kind,candidate);
-    if(!sinks.some(sink=>overlaps(objectRect(sink),objectRect(proposed))))return proposed;
+    const proposed=appliance(kind,candidate),area=objectRect(proposed);
+    if(forbidden.some(zone=>overlaps(area,zone)))continue;
+    if(occupied.some(object=>overlaps(area,objectRect(object))))continue;
+    return proposed;
   }
   return appliance(kind,candidates[0]);
 }
 
-function ensureSinkBase(objects:EditorObject[],appliances:EditorObject[]):EditorObject[]{
+function ensureSinkBase(objects:EditorObject[],appliances:EditorObject[],zones:OpeningZone[]):EditorObject[]{
   if(objects.some(object=>object.kind==='sink-base'))return objects;
   const available=objects.find(object=>isBaseCabinetKind(object.kind)&&!appliances.some(item=>overlaps(objectRect(object),objectRect(item))));
   if(available)return objects.map(object=>object.id===available.id?{...object,kind:'sink-base',name:'Sink Base'}:object);
+  const doorZones=zones.filter(zone=>zone.kind==='door').map(zone=>zone.area);
   const candidates=[
     objectDefaults('sink-base',{id:'ai-fallback-sink',name:'Sink Base',x:174,y:120,widthIn:36}),
     objectDefaults('sink-base',{id:'ai-fallback-sink',name:'Sink Base',x:210,y:120,widthIn:36}),
     objectDefaults('sink-base',{id:'ai-fallback-sink',name:'Sink Base',x:120,y:204,widthIn:36,rotation:90}),
   ];
-  const fallback=candidates.find(candidate=>!appliances.some(item=>overlaps(objectRect(candidate),objectRect(item))));
+  const fallback=candidates.find(candidate=>{
+    const area=objectRect(candidate);
+    return !appliances.some(item=>overlaps(area,objectRect(item)))&&!doorZones.some(zone=>overlaps(area,zone))&&!objects.some(item=>isCabinetKind(item.kind)&&overlaps(area,objectRect(item)));
+  });
   return fallback?[...objects,fallback]:objects;
 }
 
-function addCoreAppliances(objects:EditorObject[],layout:AILayoutType,runX:number,runY:number):EditorObject[]{
-  const refrigeratorCandidates:Placement[]=[
-    {x:120+Math.max(0,runX-36),y:120,rotation:0},
-    {x:120,y:150+Math.max(12,runY-36),rotation:90},
-    {x:120+runX,y:150+Math.max(12,runY-36),rotation:90},
-  ];
-  const rangeCandidates:Placement[]=layout==='Single Wall'
-    ? [{x:120,y:120,rotation:0},{x:120+Math.max(36,runX*.42),y:120,rotation:0}]
-    : layout==='L-Shape'
-      ? [{x:120,y:150+Math.max(12,runY-30),rotation:90},{x:120,y:120,rotation:0}]
-      : layout==='Galley'
-        ? [{x:120+Math.max(18,Math.min(runX-30,runX*.45)),y:240,rotation:0},{x:120,y:120,rotation:0}]
-        : [{x:120+runX,y:150+Math.max(18,Math.min(runY-30,runY*.45)),rotation:90},{x:120,y:120,rotation:0}];
-  if(layout==='U-Shape')refrigeratorCandidates.unshift({x:120,y:150+Math.max(12,runY-36),rotation:90});
-  const refrigerator=choosePlacement('Refrigerator',refrigeratorCandidates,objects);
-  const range=choosePlacement('Range',rangeCandidates,objects);
+function addCoreAppliances(objects:EditorObject[],layout:AILayoutType,runX:number,runY:number,zones:OpeningZone[]):EditorObject[]{
+  const refrigerator=choosePlacement('Refrigerator',corePlacementCandidates('Refrigerator',layout,runX,runY),zones);
+  const range=choosePlacement('Range',corePlacementCandidates('Range',layout,runX,runY),zones,[refrigerator]);
   const appliances=[refrigerator,range];
-  const cleared=objects.filter(object=>{
-    if(!isCabinetKind(object.kind)||object.kind==='sink-base')return true;
-    return !appliances.some(item=>overlaps(objectRect(object),objectRect(item)));
-  });
-  return [...ensureSinkBase(cleared,appliances),...appliances];
+  const cleared=objects.filter(object=>!isCabinetKind(object.kind)||!appliances.some(item=>overlaps(objectRect(object),objectRect(item))));
+  return [...ensureSinkBase(cleared,appliances,zones),...appliances];
 }
 
 export function applyAIDesignSuggestion(project:EditorProject,suggestion:AIDesignSuggestion):EditorProject{
@@ -166,13 +185,14 @@ export function applyAIDesignSuggestion(project:EditorProject,suggestion:AIDesig
   );
   const roomWidth=Math.max(96,inches(project.room.widthM)),roomLength=Math.max(96,inches(project.room.lengthM));
   const runX=Math.min(roomWidth-24,144),runY=Math.min(roomLength-24,132);
+  const zones=openingClearZones(project);
   let generated:EditorObject[]=[];
   if(suggestion.layout==='Single Wall')generated.push(...row(120,120,runX,'ai-north'));
   if(suggestion.layout==='L-Shape'){generated.push(...row(120,120,runX,'ai-north'));generated.push(...row(120,150,Math.max(60,runY-36),'ai-west',90));}
   if(suggestion.layout==='Galley'){generated.push(...row(120,120,runX,'ai-galley-a'));generated.push(...row(120,240,runX,'ai-galley-b'));}
   if(suggestion.layout==='U-Shape'){generated.push(...row(120,120,runX,'ai-north'));generated.push(...row(120,150,Math.max(60,runY-36),'ai-west',90));generated.push(...row(120+runX,150,Math.max(60,runY-36),'ai-east',90));}
-  generated=clearCabinetryForOpenings(generated,project);
-  generated=addCoreAppliances(generated,suggestion.layout,runX,runY);
+  generated=clearCabinetryForOpenings(generated,zones);
+  generated=addCoreAppliances(generated,suggestion.layout,runX,runY,zones);
   const finish=cabinetFinishForStyle(suggestion.style);
   generated=generated.map(object=>isCabinetKind(object.kind)?{
     ...object,color:finish.baseColor,finishId:finish.id,
