@@ -1,0 +1,27 @@
+name: Export clean layout source
+
+on:
+  push:
+    branches:
+      - fix/clean-manual-starter-layout
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload source
+        uses: actions/upload-artifact@v4
+        with:
+          name: kitchen-ai-clean-layout-source
+          path: |
+            .
+            !node_modules
+            !dist
+            !.git
+          include-hidden-files: true
+          retention-days: 3
