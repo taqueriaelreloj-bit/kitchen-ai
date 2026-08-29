@@ -1,0 +1,27 @@
+name: Apply Estimate UI Integration
+
+on:
+  push:
+    branches: [feature/web-estimate-panel]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, 'Wire Project Estimate panel') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/web-estimate-panel
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13
+      - run: node scripts/apply-estimate-ui.mjs
+      - run: |
+          git config user.name "Kitchen AI Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Wire Project Estimate panel into web editor"
+          git push origin HEAD:feature/web-estimate-panel
