@@ -1,0 +1,43 @@
+name: Apply software 3D camera scale
+
+on:
+  push:
+    branches:
+      - fix/software-3d-camera-scale
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/software-3d-camera-scale
+          fetch-depth: 0
+
+      - name: Align software and WebGL camera units
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('src/domain/nativeProjection3d.ts')
+          text=path.read_text()
+          old='  const distance = camera.distance / 42;'
+          new='  // Match the 24-inches-per-scene-unit convention used by geometry and WebGL.\n  const distance = camera.distance / 24;'
+          if old not in text and new not in text:
+              raise SystemExit('Native camera distance marker not found')
+          path.write_text(text.replace(old,new,1))
+          PY
+
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/domain/nativeProjection3d.ts
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "fix: align software 3D camera scale with WebGL"
+          git push origin HEAD:fix/software-3d-camera-scale
