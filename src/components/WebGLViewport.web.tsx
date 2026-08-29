@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { EditorProject } from '../domain/editor';
 import { buildSceneBoxes } from '../domain/geometry';
+import { Native3DWorkspace } from './Native3DWorkspace';
 import {
   Vec3,
   lookAtMatrix,
@@ -258,6 +259,15 @@ export function WebGLViewport({project,preview}:{project:EditorProject;preview:(
       },
     });
   };
+
+  if(renderError)return <View style={styles.root}>
+    <Native3DWorkspace project={project} apply={next=>preview(next)}/>
+    <View pointerEvents="none" style={styles.error}>
+      <Text style={styles.errorTitle}>Software 3D mode</Text>
+      <Text style={styles.errorText}>WebGL is unavailable, so Kitchen AI is showing the compatible interactive 3D preview.</Text>
+      <Text style={styles.errorHelp}>Drag to orbit, pinch or use the mouse to navigate, and double-click an object to focus it.</Text>
+    </View>
+  </View>;
 
   return <View style={styles.root}>
     <canvas
