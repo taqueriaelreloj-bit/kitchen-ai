@@ -56,7 +56,8 @@ function cameraBasis(cameraValue: Camera3DState) {
   const camera = normalizeCamera3D(cameraValue);
   const yaw = radians(camera.yaw);
   const pitch = radians(camera.pitch);
-  const distance = camera.distance / 42;
+  // Match the 24-inches-per-scene-unit convention used by geometry and WebGL.
+  const distance = camera.distance / 24;
   const target: Vec3 = [camera.target.x / 24, 2, camera.target.y / 24];
   const eye: Vec3 = [
     target[0] + Math.cos(pitch) * Math.sin(yaw) * distance,
