@@ -1,0 +1,53 @@
+name: Capture gas range runtime preview
+
+on:
+  push:
+    branches:
+      - preview/gas-ranges-runtime
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: preview/gas-ranges-runtime
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13
+          cache: npm
+
+      - name: Install project and capture dependency
+        run: |
+          npm ci
+          npm install --no-save --package-lock=false puppeteer-core@24.16.0
+
+      - name: Build web application
+        run: npm run build:web
+
+      - name: Start Kitchen AI and capture runtime screenshots
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/kitchen-ai-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid || true' EXIT
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          node scripts/capture-gas-range-runtime-preview.mjs
+
+      - name: Upload runtime preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: kitchen-ai-gas-range-runtime-preview
+          path: runtime-preview/*.png
+          if-no-files-found: error
+          retention-days: 3
