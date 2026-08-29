@@ -1,0 +1,38 @@
+name: Apply gas range implementation
+
+on:
+  push:
+    branches: [feature/gas-range-catalog]
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/gas-range-catalog
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13
+          cache: npm
+      - name: Apply implementation
+        run: node scripts/apply-gas-range-implementation.mjs
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build:web
+      - name: Commit verified implementation
+        run: |
+          git rm scripts/apply-gas-range-implementation.mjs .github/workflows/apply-gas-range-implementation.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Integrate professional 3D gas range catalog"
+          git push origin HEAD:feature/gas-range-catalog
