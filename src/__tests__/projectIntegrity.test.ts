@@ -33,7 +33,8 @@ describe('Kitchen AI project integrity',()=>{
     project=addOpening(project,'window');
     const window=project.objects.find(object=>object.kind==='window')!;
     project=attachOpening(project,window.id,'wall-north',24);
-    project={...project,objects:[...project.objects.filter(object=>object.id!=='wall-north'),{...project.objects[0]}],selectedId:'missing'};
+    const duplicate={...project.objects.find(object=>object.id==='base-1')!};
+    project={...project,objects:[...project.objects.filter(object=>object.id!=='wall-north'),duplicate],selectedId:'missing'};
     const codes=inspectProjectIntegrity(project).map(issue=>issue.code);
     expect(codes).toContain('duplicate-object-id');
     expect(codes).toContain('selected-object-missing');
