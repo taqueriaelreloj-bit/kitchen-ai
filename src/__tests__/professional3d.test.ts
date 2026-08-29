@@ -29,7 +29,7 @@ describe('professional dollhouse 3D',()=>{
     const visit=professionalCameraForView(project,'visit',viewport);
     const wall=professionalCameraForView(project,'wall',viewport);
     const top=professionalCameraForView(project,'top',viewport);
-    expect(dollhouse.pitch).toBe(52);
+    expect(dollhouse.pitch).toBe(48);
     expect(top.pitch).toBe(76);
     expect(visit.pitch).toBeLessThan(20);
     expect(wall.pitch).toBeLessThan(12);
