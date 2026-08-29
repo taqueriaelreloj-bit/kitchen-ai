@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { EditorProject } from '../domain/editor';
 import { parseProject, projectFileName, projectScheduleCsv, serializeProject, summarizeProject } from '../domain/projectIO';
+import { PlanExportPanel } from './PlanExportPanel.web';
 
 function Button({label,onPress}:{label:string;onPress:()=>void}) { return <Pressable accessibilityRole="button" onPress={onPress} style={s.button}><Text style={s.buttonText}>{label}</Text></Pressable>; }
 function Section({title,children}:{title:string;children:ReactNode}) { return <View style={s.section}><Text style={s.title}>{title}</Text>{children}</View>; }
@@ -14,7 +15,7 @@ export function ProjectPanel({project,apply,onMessage}:{project:EditorProject;ap
 }
 
 export function ExportPanel({project,onMessage}:{project:EditorProject;onMessage:(message:string)=>void}) {
-  return <View><Section title="Export Project"><Button label="Download Kitchen AI Project" onPress={()=>{download(projectFileName(project),serializeProject(project),'application/json;charset=utf-8');onMessage('Project file exported.');}}/><Text style={s.help}>Use this file to reopen the complete editable project later.</Text></Section><Section title="Export Schedule"><Button label="Download Object Schedule CSV" onPress={()=>{download(projectFileName(project).replace('.kitchenai.json','-schedule.csv'),projectScheduleCsv(project),'text/csv;charset=utf-8');onMessage('Object schedule exported.');}}/><Text style={s.help}>CSV includes dimensions, materials, finishes, toe kick, hardware, openings, lighting, countertop and island notes.</Text></Section></View>;
+  return <View><PlanExportPanel project={project} onMessage={onMessage}/><Section title="Export Project"><Button label="Download Kitchen AI Project" onPress={()=>{download(projectFileName(project),serializeProject(project),'application/json;charset=utf-8');onMessage('Project file exported.');}}/><Text style={s.help}>Use this file to reopen the complete editable project later.</Text></Section><Section title="Export Schedule"><Button label="Download Object Schedule CSV" onPress={()=>{download(projectFileName(project).replace('.kitchenai.json','-schedule.csv'),projectScheduleCsv(project),'text/csv;charset=utf-8');onMessage('Object schedule exported.');}}/><Text style={s.help}>CSV includes dimensions, materials, finishes, toe kick, hardware, openings, lighting, countertop and island notes.</Text></Section></View>;
 }
 
 const s=StyleSheet.create({section:{gap:9,marginBottom:18},title:{fontSize:14,fontWeight:'900',color:'#1D2A27',textTransform:'uppercase'},projectName:{fontSize:18,fontWeight:'900',color:'#1D2A27'},help:{fontSize:13,lineHeight:19,color:'#5C6B66'},summary:{fontSize:13,fontWeight:'700',color:'#34443E',lineHeight:20},button:{minHeight:44,borderWidth:1,borderColor:'#91AAA2',borderRadius:9,backgroundColor:'#fff',paddingHorizontal:12,alignItems:'center',justifyContent:'center'},buttonText:{fontSize:13,fontWeight:'800',color:'#21483D'}});

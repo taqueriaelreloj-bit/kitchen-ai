@@ -3,6 +3,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { EditorProject } from '../domain/editor';
 import { projectPlanFileName, projectPlanSvg } from '../domain/planExport';
 
+const HtmlView=View as any;
+
 function Button({label,onPress,active=false}:{label:string;onPress:()=>void;active?:boolean}){
   return <Pressable accessibilityRole="button" accessibilityState={{selected:active}} onPress={onPress} style={[s.button,active&&s.buttonActive]}><Text style={[s.buttonText,active&&s.buttonTextActive]}>{label}</Text></Pressable>;
 }
@@ -18,7 +20,7 @@ export function PlanExportPanel({project,onMessage}:{project:EditorProject;onMes
     <Text style={s.title}>2D Vector Plan</Text>
     <Text style={s.help}>Export a scalable SVG with real project geometry. Zoom never changes the dimensions or exported positions.</Text>
     <View style={s.options}><Button label="Grid" active={grid} onPress={()=>setGrid(!grid)}/><Button label="Measurements" active={measurements} onPress={()=>setMeasurements(!measurements)}/><Button label="Labels" active={labels} onPress={()=>setLabels(!labels)}/><Button label="Title Block" active={titleBlock} onPress={()=>setTitleBlock(!titleBlock)}/></View>
-    <View style={s.preview} dangerouslySetInnerHTML={{__html:svg}}/>
+    <HtmlView style={s.preview} dangerouslySetInnerHTML={{__html:svg}}/>
     <Button label="Download 2D Plan SVG" onPress={()=>{download(projectPlanFileName(project),svg);onMessage?.('2D vector plan exported.');}}/>
     <Text style={s.note}>SVG is a digital vector drawing, not a permit or fabrication document. Dimensions govern; verify field conditions before construction.</Text>
   </View>;
