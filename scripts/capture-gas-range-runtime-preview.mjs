@@ -232,10 +232,12 @@ try {
     fullPage: false,
   });
 
-  await clickExactText('42" Range + Griddle');
-  await new Promise(resolve => setTimeout(resolve, 800));
+  await clickExactText('Fullscreen', true);
+  await new Promise(resolve => setTimeout(resolve, 900));
+  await clickExactText('Fit', true);
+  await new Promise(resolve => setTimeout(resolve, 1600));
   await page.screenshot({
-    path: path.join(outputDir, 'kitchen-ai-gas-ranges-catalog.png'),
+    path: path.join(outputDir, 'kitchen-ai-gas-range-fullscreen-3d.png'),
     fullPage: false,
   });
 
