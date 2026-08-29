@@ -10,11 +10,11 @@ describe('precision 2D plan snapping',()=>{
     expect(result.guides).toHaveLength(0);
   });
 
-  test('joins rendered cabinet edges and returns an alignment guide',()=>{
+  test('joins cabinet edges in real inches and returns an alignment guide',()=>{
     const target=objectDefaults('base-cabinet',{id:'target',x:100,y:100,widthIn:30,depthIn:24});
     const moving=objectDefaults('base-cabinet',{id:'moving',x:0,y:0,widthIn:24,depthIn:24});
-    const result=snapPlanObject(moving,{x:115.5,y:101.5},[target,moving],{grid:false,toleranceIn:4});
-    expect(result.x).toBe(113.5);
+    const result=snapPlanObject(moving,{x:127.5,y:101.5},[target,moving],{grid:false,toleranceIn:4});
+    expect(result.x).toBe(130);
     expect(result.y).toBe(100);
     expect(result.guides.some(guide=>guide.axis==='x'&&guide.kind==='edge')).toBe(true);
     expect(result.guides.some(guide=>guide.axis==='y')).toBe(true);
@@ -31,11 +31,11 @@ describe('precision 2D plan snapping',()=>{
     expect(result.guides.some(guide=>guide.kind==='center'&&guide.axis==='x')).toBe(true);
   });
 
-  test('uses the rendered rotated footprint for quarter-turn cabinets',()=>{
+  test('uses the real rotated footprint for quarter-turn cabinets',()=>{
     const rotated=objectDefaults('base-cabinet',{id:'rotated',x:100,y:100,widthIn:36,depthIn:24,rotation:90});
     const bounds=objectPlanBounds(rotated);
-    expect(bounds.right-bounds.left).toBeCloseTo(10.8,5);
-    expect(bounds.bottom-bounds.top).toBeCloseTo(16.2,5);
+    expect(bounds.right-bounds.left).toBeCloseTo(24,5);
+    expect(bounds.bottom-bounds.top).toBeCloseTo(36,5);
   });
 
   test('ignores distant objects outside tolerance',()=>{
