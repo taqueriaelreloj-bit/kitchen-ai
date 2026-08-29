@@ -9,6 +9,13 @@ export function installWebLayoutFixes(){
        classes. For right-edge categories, right:0 must win so the product tray
        stays inside the browser viewport at increased browser/display zoom. */
     .r-zchlnj.r-1d2f490.r-1uacjwt.r-m7rbdw{left:auto!important;}
+
+    /* The 2D plan is fitted around its top-left coordinate system. Browser CSS
+       otherwise scales the plan around its center, which can move an imported
+       project completely outside the visible workspace at 200% zoom. */
+    [aria-label="2D kitchen workspace"]>div[style*="scale("]{
+      transform-origin:0 0!important;
+    }
   `;
   document.head.appendChild(style);
 }
