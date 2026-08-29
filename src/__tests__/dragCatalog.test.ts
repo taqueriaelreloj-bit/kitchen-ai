@@ -36,9 +36,9 @@ describe('hover catalog drag and drop',()=>{
     expect(parseDragCatalogItem('not-json')).toBeUndefined();
   });
 
-  test('converts screen coordinates through current pan and zoom',()=>{
+  test('converts screen coordinates through display scale, pan and zoom',()=>{
     const project={...createEditorProject(room,design),view2d:{zoom:2,pan:{x:40,y:-20},grid:true,snap:true,measurements:true}};
-    expect(workspaceClientPointToPlan(project,{x:340,y:280},{x:100,y:50})).toEqual({x:100,y:125});
+    expect(workspaceClientPointToPlan(project,{x:340,y:280},{x:100,y:50})).toEqual({x:50,y:62.5});
   });
 
   test('drops, selects and snaps an item in one project change',()=>{
