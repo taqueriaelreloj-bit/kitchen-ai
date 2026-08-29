@@ -27,11 +27,21 @@ jobs:
           from pathlib import Path
           path = Path('scripts/apply-gas-range-implementation.mjs')
           source = path.read_text()
-          old = r"""      const rangeIdentity = \`${fresh.applianceType ?? ''} ${fresh.productId ?? ''} ${fresh.variantId ?? ''} ${fresh.finishId ?? ''} ${fresh.name}\`.toLowerCase();"""
-          new = """      const rangeIdentity = [fresh.applianceType ?? '', fresh.productId ?? '', fresh.variantId ?? '', fresh.finishId ?? '', fresh.name].join(' ').toLowerCase();"""
-          if old not in source:
-              raise SystemExit('Expected generator line was not found')
-          path.write_text(source.replace(old, new, 1))
+          replacements = [
+              (
+                  r"""      const rangeIdentity = \`${fresh.applianceType ?? ''} ${fresh.productId ?? ''} ${fresh.variantId ?? ''} ${fresh.finishId ?? ''} ${fresh.name}\`.toLowerCase();""",
+                  """      const rangeIdentity = [fresh.applianceType ?? '', fresh.productId ?? '', fresh.variantId ?? '', fresh.finishId ?? '', fresh.name].join(' ').toLowerCase();""",
+              ),
+              (
+                  "  '</>}{lighting&&<LightingPanel',",
+                  "  '{lighting&&<LightingPanel',",
+              ),
+          ]
+          for old, new in replacements:
+              if old not in source:
+                  raise SystemExit(f'Expected generator text was not found: {old[:80]}')
+              source = source.replace(old, new, 1)
+          path.write_text(source)
           PY
           node scripts/apply-gas-range-implementation.mjs
       - run: npm ci
