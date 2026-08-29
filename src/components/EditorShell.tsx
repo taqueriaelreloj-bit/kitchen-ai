@@ -19,6 +19,7 @@ import { ColorLibraryPanel } from './ColorLibraryPanel';
 import { HardwarePanel } from './HardwarePanel';
 import { LayoutCheckPanel } from './LayoutCheckPanel';
 import { LightingPanel } from './LightingPanel';
+import { WallToolPanel } from './WallToolPanel';
 import { NativeWorkspace } from './NativeWorkspace';
 import { ApplianceCatalogPanel, GasRangeFinishPanel } from './ApplianceCatalogPanel';
 
@@ -42,7 +43,7 @@ function ToolPanel({tool,project,selected,apply}:{tool:Tool;project:EditorProjec
   const add=(kind:ObjectKind)=>apply({...project,objects:[...project.objects,objectDefaults(kind,{x:150+project.objects.length*8,y:120+project.objects.length*8})],updatedAt:new Date().toISOString()});
   if(tool==='AI Design')return <AIDesignPanel project={project} apply={p=>apply(p)}/>;
   if(tool==='Layout Check')return <LayoutCheckPanel project={project} apply={apply}/>;
-  if(tool==='Walls')return <Section title="Walls"><View style={s.wrap}><Button label="Add Wall" onPress={()=>add('wall')}/><Button label="Continue Wall" onPress={()=>add('wall')}/><Button label="Delete Wall" disabled={selected?.kind!=='wall'} onPress={()=>selected&&apply(deleteObject(project,selected.id))}/></View></Section>;
+  if(tool==='Walls')return <ScrollView><WallToolPanel project={project} selected={selected} apply={apply}/></ScrollView>;
   if(tool==='Doors & Windows')return <Section title="Doors & Windows"><View style={s.wrap}><Button label="Add Door" onPress={()=>apply(addOpening(project,'door'))}/><Button label="Add Window" onPress={()=>apply(addOpening(project,'window'))}/></View><Text style={s.help}>Openings attach to the selected wall, or the first wall when none is selected.</Text></Section>;
   if(tool==='Cabinets')return <ScrollView><Section title="Cabinet Library"><View style={s.library}>{CABINET_LIBRARY.map(x=><Button key={x.kind} label={x.label} onPress={()=>add(x.kind)}/>)}</View></Section><Section title="Toe Kick"><View style={s.wrap}><Button label="Selected On" disabled={!selected||!isBaseLikeKind(selected.kind)} onPress={()=>apply(applyToeKick(project,{enabled:true},false))}/><Button label="Selected Off" disabled={!selected||!isBaseLikeKind(selected.kind)} onPress={()=>apply(applyToeKick(project,{enabled:false},false))}/><Button label="All Base On" onPress={()=>apply(applyToeKick(project,{enabled:true},true))}/><Button label="All Base Off" onPress={()=>apply(applyToeKick(project,{enabled:false},true))}/></View></Section></ScrollView>;
   if(tool==='Appliances')return <ApplianceCatalogPanel project={project} apply={apply}/>;
