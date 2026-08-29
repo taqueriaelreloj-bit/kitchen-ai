@@ -15,6 +15,9 @@ export type ProjectedBox = {
   color: string;
   roughness: number;
   metalness: number;
+  opacity?: number;
+  surface?: string;
+  selectable?: boolean;
 };
 
 type Vec3 = [number, number, number];
@@ -130,6 +133,9 @@ export function projectNativeBox(box: Box3D, camera: Camera3DState, viewport: Vi
     color: box.color,
     roughness: box.roughness,
     metalness: box.metalness,
+    opacity: (box as Box3D & { opacity?: number }).opacity,
+    surface: (box as Box3D & { surface?: string }).surface,
+    selectable: (box as Box3D & { selectable?: boolean }).selectable,
   };
 }
 
