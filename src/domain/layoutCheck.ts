@@ -3,8 +3,8 @@ import { LayoutIssue, layoutIssueCounts, validateKitchenLayout } from './designV
 
 /**
  * Compatibility entry point used by the printable design-review module.
- * The active layout engine lives in designValidation; keeping this small
- * adapter avoids duplicating collision, clearance, and core-fixture rules.
+ * The active layout engine lives in designValidation; this adapter keeps one
+ * source of truth for collisions, clearances, and core-fixture checks.
  */
 export function checkKitchenLayout(project: EditorProject): LayoutIssue[] {
   return validateKitchenLayout(project);
