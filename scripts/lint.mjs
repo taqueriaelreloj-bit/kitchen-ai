@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import ts from 'typescript';
@@ -24,6 +23,10 @@ const location=(source,node)=>{
   const point=source.getLineAndCharacterOfPosition(node.getStart(source));
   return `${path.relative(root,source.fileName)}:${point.line+1}:${point.character+1}`;
 };
+const positionLocation=(source,position)=>{
+  const point=source.getLineAndCharacterOfPosition(position);
+  return `${path.relative(root,source.fileName)}:${point.line+1}:${point.character+1}`;
+};
 const addError=(source,node,message)=>errors.push(`${location(source,node)} ${message}`);
 const addWarning=(source,node,message)=>warnings.push(`${location(source,node)} ${message}`);
 
@@ -42,7 +45,13 @@ for(const source of program.getSourceFiles()){
 
   const imports=new Map();
   const text=source.getFullText();
-  if(/@ts-ignore\b/.test(text))errors.push(`${relative}:1:1 @ts-ignore is not allowed; use a typed compatibility boundary instead`);
+  const forbiddenDirective=['@ts','ignore'].join('-');
+  const scanner=ts.createScanner(ts.ScriptTarget.Latest,false,source.languageVariant,text);
+  for(let token=scanner.scan();token!==ts.SyntaxKind.EndOfFileToken;token=scanner.scan()){
+    if((token===ts.SyntaxKind.SingleLineCommentTrivia||token===ts.SyntaxKind.MultiLineCommentTrivia)&&scanner.getTokenText().includes(forbiddenDirective)){
+      errors.push(`${positionLocation(source,scanner.getTokenPos())} TypeScript ignore directives are not allowed; use a typed compatibility boundary instead`);
+    }
+  }
   const lines=text.split(/\r?\n/);
   if(lines.length>900)warnings.push(`${relative}:1:1 file has ${lines.length} lines; consider extracting focused components`);
   lines.forEach((line,index)=>{
@@ -72,4 +81,5 @@ if(errors.length){
   console.error(`lint failed with ${errors.length} error${errors.length===1?'':'s'} and ${warnings.length} warning${warnings.length===1?'':'s'}`);
   process.exit(1);
 }
-console.log(`lint passed: ${program.getSourceFiles().filter(file=>!file.isDeclarationFile&&!file.fileName.includes('node_modules')).length} source files checked, ${warnings.length} warning${warnings.length===1?'':'s'}`);
+const sourceCount=program.getSourceFiles().filter(file=>!file.isDeclarationFile&&!file.fileName.includes('node_modules')).length;
+process.stdout.write(`lint passed: ${sourceCount} source files checked, ${warnings.length} warning${warnings.length===1?'':'s'}\n`);
