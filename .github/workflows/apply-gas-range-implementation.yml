@@ -44,6 +44,58 @@ jobs:
           path.write_text(source)
           PY
           node scripts/apply-gas-range-implementation.mjs
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path_name, old, new, count=1):
+              path = Path(path_name)
+              source = path.read_text()
+              if source.count(old) < count:
+                  raise SystemExit(f'Expected generated text was not found in {path_name}: {old[:90]}')
+              path.write_text(source.replace(old, new, count))
+
+          replace(
+              'src/domain/applianceCatalog.ts',
+              'export const REFRIGERATOR_CATALOG: ApplianceCatalogItem[] = [',
+              "export const REFRIGERATOR_CATALOG: (ApplianceCatalogItem & { id: RefrigeratorModelId; category: 'refrigerator' })[] = [",
+          )
+          replace(
+              'src/domain/applianceCatalog.ts',
+              'export const GAS_RANGE_CATALOG: ApplianceCatalogItem[] = [',
+              "export const GAS_RANGE_CATALOG: (ApplianceCatalogItem & { id: GasRangeModelId; category: 'gas-range' })[] = [",
+          )
+          replace(
+              'src/domain/applianceCatalog.ts',
+              'export function isGasRangeObject(object?: EditorObject): object is EditorObject {',
+              "export function isGasRangeObject(object?: EditorObject): object is EditorObject & { kind: 'appliance' } {",
+          )
+          replace(
+              'src/components/ApplianceCatalogPanel.tsx',
+              "import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';",
+              "import { Pressable, ScrollView, StyleSheet, Text, View, ViewStyle } from 'react-native';",
+          )
+          replace(
+              'src/components/ApplianceCatalogPanel.tsx',
+              '  const burnerPositions = griddle',
+              '  const burnerPositions: ViewStyle[] = griddle',
+          )
+          replace(
+              'src/components/GasRangePlanGraphic.tsx',
+              '  root: { ...StyleSheet.absoluteFillObject, padding: 2, opacity: .92 },',
+              "  root: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, padding: 2, opacity: .92 },",
+          )
+          replace(
+              'src/__tests__/gasRangeCatalog.test.ts',
+              "import { duplicateObject, migrateProject, updateObject } from '../domain/editor';",
+              "import { duplicateObject, EditorProject, migrateProject, updateObject } from '../domain/editor';",
+          )
+          replace(
+              'src/__tests__/gasRangeCatalog.test.ts',
+              '    let project = { ...makeProject(), objects:',
+              '    let project: EditorProject = { ...makeProject(), objects:',
+              2,
+          )
+          PY
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
