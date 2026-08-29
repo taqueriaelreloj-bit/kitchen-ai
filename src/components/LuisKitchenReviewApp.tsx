@@ -4,10 +4,19 @@ import { StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { createLuisTenByElevenKitchen } from '../domain/luisKitchenDemo';
 import { EditorProject } from '../domain/editor';
+import { professionalCameraForView } from '../domain/professional3d';
 import { EditorShell } from './EditorShell';
 
+function createReviewProject(): EditorProject {
+  const project = createLuisTenByElevenKitchen();
+  project.viewMode = '3d';
+  project.selectedId = undefined;
+  project.camera3d = professionalCameraForView(project, 'dollhouse', { width: 1440, height: 820 });
+  return project;
+}
+
 export function LuisKitchenReviewApp() {
-  const [project, setProject] = useState<EditorProject>(() => createLuisTenByElevenKitchen());
+  const [project, setProject] = useState<EditorProject>(createReviewProject);
   return <SafeAreaProvider>
     <StatusBar style="light" />
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
