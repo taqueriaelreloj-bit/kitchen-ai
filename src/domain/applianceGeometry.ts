@@ -1,4 +1,5 @@
 import { EditorObject } from './editor';
+import { GasRangeMaterialGroup, professionalGasRangeParts } from './gasRangeGeometry';
 
 export type AppliancePart = {
   id: string;
@@ -11,6 +12,7 @@ export type AppliancePart = {
   color: string;
   roughness: number;
   metalness: number;
+  materialGroup?: GasRangeMaterialGroup;
 };
 
 const part = (
@@ -26,7 +28,7 @@ const part = (
   metalness = .8,
 ): AppliancePart => ({ id, offsetXIn: x, offsetYIn: y, offsetZIn: z, widthIn: w, heightIn: h, depthIn: d, color, roughness, metalness });
 
-const identity = (object: EditorObject) => `${object.finishId ?? ''} ${object.material ?? ''} ${object.name}`.toLowerCase();
+const identity = (object: EditorObject) => `${object.productId ?? ''} ${object.variantId ?? ''} ${object.applianceType ?? ''} ${object.finishId ?? ''} ${object.material ?? ''} ${object.name}`.toLowerCase();
 const frontOf = (object: EditorObject, extra = .35) => -object.depthIn / 2 - extra;
 
 function legacyRefrigerator(object: EditorObject): AppliancePart[] {
@@ -128,6 +130,7 @@ function retroBlue(object: EditorObject): AppliancePart[] {
 export function applianceDetailGeometry(object: EditorObject): AppliancePart[] {
   if (object.kind !== 'appliance') return [];
   const key = identity(object);
+  if (object.applianceType === 'gas-range' || key.includes('gas-range') || key.includes('gas range')) return professionalGasRangeParts(object);
   if (key.includes('refrigerator-panel-ready-built-in') || key.includes('panel ready') || key.includes('panel-ready')) return panelReadyBuiltIn(object);
   if (key.includes('refrigerator-smart-black') || key.includes('smart refrigerator') || key.includes('black glass')) return smartBlack(object);
   if (key.includes('refrigerator-retro-blue') || key.includes('retro') || key.includes('pastel blue')) return retroBlue(object);

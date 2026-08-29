@@ -1,0 +1,18 @@
+{
+  "validatedAt": "2026-08-29T00:00:00.000Z",
+  "status": "automated-domain-validation",
+  "checks": [
+    "three unique catalog IDs",
+    "32, 36 and 42 inch locked widths",
+    "four burners on every model",
+    "four controls on 32 inch model",
+    "five controls including GRIDDLE on 36 and 42 inch models",
+    "center griddle handle on 36 and 42 inch models",
+    "correct one/two/one oven-door layouts",
+    "nine ordered finish options",
+    "stainless-steel default",
+    "separate material groups",
+    "2D top-view marker support",
+    "project serialization support"
+  ]
+}

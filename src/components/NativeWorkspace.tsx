@@ -4,6 +4,7 @@ import { EditorObject, EditorProject, Vec2, View2DState } from '../domain/editor
 import { createObjectDragOrigin, moveObjectByPlanDelta, ObjectDragOrigin } from '../domain/objectMovement';
 import { pan2DView, pinch2DView } from '../domain/touchNavigation';
 import { Native3DWorkspace } from './Native3DWorkspace';
+import { GasRangePlanGraphic } from './GasRangePlanGraphic';
 
 type Props = { project: EditorProject; apply: (project: EditorProject, record?: boolean) => void };
 type GestureState = { mode: 'none'|'pan'|'pinch'; startView: View2DState; startDistance: number; startMidpoint: Vec2 };
@@ -89,6 +90,7 @@ function NativePlanObject({ project, object, view, apply, setObjectTouch }: Obje
     style={[s.object, { left: previewObject.x, top: previewObject.y, width, height: depth, backgroundColor: previewObject.color ?? '#C8CFCC', transform: [{ rotate: `${previewObject.rotation}deg` }] }, (project.selectedId === object.id || dragging) && s.selected]}
     {...responder.panHandlers}
   >
+    <GasRangePlanGraphic object={previewObject}/>
     <Text numberOfLines={1} style={s.objectLabel}>{previewObject.name}</Text>
     {view.measurements && <Text numberOfLines={1} style={s.dimensionLabel}>{Math.round(previewObject.widthIn)}″ × {Math.round(previewObject.depthIn)}″</Text>}
   </Pressable>;
