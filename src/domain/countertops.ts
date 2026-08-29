@@ -1,4 +1,4 @@
-import { EditorObject, EditorProject, objectDefaults, updateObject } from './editor';
+import { EditorObject, EditorProject, isBaseCabinetKind, objectDefaults, updateObject } from './editor';
 
 export type CountertopMaterialId = 'quartz-white'|'quartz-calacatta'|'granite-black'|'granite-white'|'marble-carrara'|'butcher-block'|'concrete';
 export type EdgeProfile = 'Eased'|'Beveled'|'Bullnose'|'Half Bullnose'|'Ogee'|'Waterfall';
@@ -47,10 +47,13 @@ export function createIsland(partial:Partial<EditorObject>={}):EditorObject {
 }
 export function updateCountertop(project:EditorProject,id:string,patch:Partial<CountertopSpec>):EditorProject {
   const object=project.objects.find(x=>x.id===id);
-  if(!object|| (object.kind!=='countertop'&&object.kind!=='island')) return project;
+  const supportsCountertop=object&&(object.kind==='countertop'||object.kind==='island'||isBaseCabinetKind(object.kind));
+  if(!object||!supportsCountertop)return project;
   const spec={...countertopData(object),...patch};
   const material=COUNTERTOP_MATERIALS.find(x=>x.id===spec.materialId)??COUNTERTOP_MATERIALS[0];
-  return updateObject(project,id,{countertopSpec:spec,heightIn:object.kind==='countertop'?spec.thicknessIn:object.heightIn,material:material.name,color:object.kind==='countertop'?material.color:object.color} as Partial<EditorObject>);
+  const objectPatch:Partial<CounterObject>={countertopSpec:spec};
+  if(object.kind==='countertop')Object.assign(objectPatch,{heightIn:spec.thicknessIn,material:material.name,color:material.color});
+  return updateObject(project,id,objectPatch as Partial<EditorObject>);
 }
 export function updateIsland(project:EditorProject,id:string,patch:Partial<IslandSpec>):EditorProject {
   const object=project.objects.find(x=>x.id===id&&x.kind==='island');
