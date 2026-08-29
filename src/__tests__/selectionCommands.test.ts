@@ -1,5 +1,5 @@
 import { generateDesigns } from '../domain/design';
-import { createEditorProject } from '../domain/editor';
+import { createEditorProject, EditorProject } from '../domain/editor';
 import { addOpening, openingData } from '../domain/openings';
 import { reconstructRoom } from '../domain/room';
 import {
@@ -18,7 +18,7 @@ const photos: ScanPhoto[] = [0, 90, 180, 270].map((angle, index) => ({
 }));
 const room = reconstructRoom(photos);
 const design = generateDesigns(room)[0];
-const selectedProject = () => ({ ...createEditorProject(room, design), selectedId: 'base-1' });
+const selectedProject = (): EditorProject => ({ ...createEditorProject(room, design), selectedId: 'base-1' });
 
 describe('shared selection editing commands', () => {
   test('nudges the selected object precisely without changing the snap preference', () => {
@@ -62,7 +62,7 @@ describe('shared selection editing commands', () => {
   });
 
   test('projects an attached opening nudge along its parent wall', () => {
-    let project = { ...createEditorProject(room, design), selectedId: 'wall-north' };
+    let project: EditorProject = { ...createEditorProject(room, design), selectedId: 'wall-north' };
     project = addOpening(project, 'door');
     const doorId = project.selectedId!;
     const before = openingData(project.objects.find(object => object.id === doorId)!);
@@ -75,7 +75,7 @@ describe('shared selection editing commands', () => {
   test('returns status for the selected object and is safe with no selection', () => {
     const project = selectedProject();
     expect(selectedObjectStatus(project)).toMatchObject({ id: 'base-1', xIn: 150, yIn: 120 });
-    const empty = { ...project, selectedId: undefined };
+    const empty: EditorProject = { ...project, selectedId: undefined };
     expect(selectedObjectStatus(empty)).toBeUndefined();
     expect(nudgeSelectedObject(empty, 1, 0)).toBe(empty);
     expect(rotateSelectedObject(empty)).toBe(empty);
