@@ -1,0 +1,27 @@
+name: Apply Cabinet Door Styles
+
+on:
+  push:
+    branches: [feature/cabinet-door-styles]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, 'Wire cabinet door styles') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/cabinet-door-styles
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13
+      - run: node scripts/apply-cabinet-door-styles.mjs
+      - run: |
+          git config user.name "Kitchen AI Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Wire cabinet door styles into catalog and WebGL"
+          git push origin HEAD:feature/cabinet-door-styles
