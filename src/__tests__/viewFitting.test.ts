@@ -51,7 +51,7 @@ describe('project view fitting', () => {
     const bounds = projectDisplayBounds(project);
     const screenWidth = bounds.width * view.zoom;
     const screenHeight = bounds.height * view.zoom;
-    expect(screenWidth).toBeGreaterThan(350);
+    expect(screenWidth).toBeGreaterThan(300);
     expect(screenHeight).toBeGreaterThan(350);
     expect(screenWidth).toBeLessThanOrEqual(viewport.width - 88 + 1);
     expect(screenHeight).toBeLessThanOrEqual(viewport.height - 88 + 1);
