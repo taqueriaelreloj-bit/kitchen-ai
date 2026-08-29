@@ -19,6 +19,7 @@ import { ColorLibraryPanel } from './ColorLibraryPanel';
 import { HardwarePanel } from './HardwarePanel';
 import { LayoutCheckPanel } from './LayoutCheckPanel';
 import { LightingPanel } from './LightingPanel';
+import { ApplianceToolPanel } from './ApplianceToolPanel';
 import { NativeWorkspace } from './NativeWorkspace';
 import { ApplianceCatalogPanel, GasRangeFinishPanel } from './ApplianceCatalogPanel';
 
@@ -45,7 +46,7 @@ function ToolPanel({tool,project,selected,apply}:{tool:Tool;project:EditorProjec
   if(tool==='Walls')return <Section title="Walls"><View style={s.wrap}><Button label="Add Wall" onPress={()=>add('wall')}/><Button label="Continue Wall" onPress={()=>add('wall')}/><Button label="Delete Wall" disabled={selected?.kind!=='wall'} onPress={()=>selected&&apply(deleteObject(project,selected.id))}/></View></Section>;
   if(tool==='Doors & Windows')return <Section title="Doors & Windows"><View style={s.wrap}><Button label="Add Door" onPress={()=>apply(addOpening(project,'door'))}/><Button label="Add Window" onPress={()=>apply(addOpening(project,'window'))}/></View><Text style={s.help}>Openings attach to the selected wall, or the first wall when none is selected.</Text></Section>;
   if(tool==='Cabinets')return <ScrollView><Section title="Cabinet Library"><View style={s.library}>{CABINET_LIBRARY.map(x=><Button key={x.kind} label={x.label} onPress={()=>add(x.kind)}/>)}</View></Section><Section title="Toe Kick"><View style={s.wrap}><Button label="Selected On" disabled={!selected||!isBaseLikeKind(selected.kind)} onPress={()=>apply(applyToeKick(project,{enabled:true},false))}/><Button label="Selected Off" disabled={!selected||!isBaseLikeKind(selected.kind)} onPress={()=>apply(applyToeKick(project,{enabled:false},false))}/><Button label="All Base On" onPress={()=>apply(applyToeKick(project,{enabled:true},true))}/><Button label="All Base Off" onPress={()=>apply(applyToeKick(project,{enabled:false},true))}/></View></Section></ScrollView>;
-  if(tool==='Appliances')return <ApplianceCatalogPanel project={project} apply={apply}/>;
+  if(tool==='Appliances')return <ApplianceToolPanel project={project} selected={selected} apply={apply}/>;
   if(tool==='Lighting')return <LightingPanel project={project} selected={selected} apply={p=>apply(p)}/>;
   if(tool==='Countertops')return <ScrollView><Section title="Countertops"><Button label="Add Countertop" onPress={()=>{const o=createCountertop({x:160+project.objects.length*7,y:130+project.objects.length*6});apply({...project,objects:[...project.objects,o],selectedId:o.id});}}/></Section>{selected?.kind==='countertop'&&<CountertopControls project={project} selected={selected} apply={p=>apply(p)}/>}</ScrollView>;
   if(tool==='Island')return <ScrollView><Section title="Island"><Button label="Add Island" onPress={()=>{const o=createIsland({x:220,y:220});apply({...project,objects:[...project.objects,o],selectedId:o.id});}}/></Section>{selected?.kind==='island'&&<CountertopControls project={project} selected={selected} apply={p=>apply(p)}/>}</ScrollView>;
