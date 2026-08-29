@@ -10,11 +10,11 @@ const finiteViewport=(viewport:ViewportSize)=>({width:Math.max(1,viewport.width)
 
 export function objectVisualBounds(object:EditorObject):Bounds2D{
   const width=Math.max(4,object.widthIn*PLAN_SCALE);
-  const height=object.kind==='wall'?Math.max(4,object.depthIn*PLAN_SCALE):Math.max(8,object.depthIn*PLAN_SCALE);
+  const height=object.kind==='wall'?Math.max(2,object.depthIn*PLAN_SCALE):Math.max(4,object.depthIn*PLAN_SCALE);
   const radians=object.rotation*Math.PI/180;
   const rotatedWidth=Math.abs(width*Math.cos(radians))+Math.abs(height*Math.sin(radians));
   const rotatedHeight=Math.abs(width*Math.sin(radians))+Math.abs(height*Math.cos(radians));
-  const centerX=object.x+width/2,centerY=object.y+height/2;
+  const centerX=object.x*PLAN_SCALE+width/2,centerY=object.y*PLAN_SCALE+height/2;
   const left=centerX-rotatedWidth/2,top=centerY-rotatedHeight/2;
   return{left,top,right:left+rotatedWidth,bottom:top+rotatedHeight,width:rotatedWidth,height:rotatedHeight,centerX,centerY};
 }
