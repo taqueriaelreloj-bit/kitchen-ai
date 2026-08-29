@@ -1,4 +1,5 @@
 import { EditorObject } from './editor';
+import { Bounds2D, objectDisplayBounds } from './viewFitting';
 
 export type AlignmentGuide = {
   axis: 'x' | 'y';
@@ -13,37 +14,20 @@ export type SnapResult = {
   guides: AlignmentGuide[];
 };
 
-type Bounds = { left:number; right:number; top:number; bottom:number; centerX:number; centerY:number };
-
 type Candidate = {
   delta: number;
   guide: AlignmentGuide;
 };
 
-const normalizedRotation=(value:number)=>((value%360)+360)%360;
-const isQuarterTurn=(rotation:number)=>{
-  const value=normalizedRotation(rotation);
-  return Math.abs(value-90)<.01||Math.abs(value-270)<.01;
-};
-
-export function objectPlanBounds(object:EditorObject,x=object.x,y=object.y):Bounds{
-  const vertical=isQuarterTurn(object.rotation);
-  const width=vertical?object.depthIn:object.widthIn;
-  const depth=vertical?object.widthIn:object.depthIn;
-  const centerX=x+object.widthIn/2;
-  const centerY=y+object.depthIn/2;
-  return {
-    left:centerX-width/2,
-    right:centerX+width/2,
-    top:centerY-depth/2,
-    bottom:centerY+depth/2,
-    centerX,
-    centerY,
-  };
+export function objectPlanBounds(object:EditorObject,x=object.x,y=object.y):Bounds2D{
+  return objectDisplayBounds(x===object.x&&y===object.y?object:{...object,x,y});
 }
 
-const axisCandidates=(moving:Bounds,target:Bounds,targetId:string,axis:'x'|'y'):Candidate[]=>{
+const rangesNear=(aStart:number,aEnd:number,bStart:number,bEnd:number,maximumGap=36)=>Math.max(aStart,bStart)-Math.min(aEnd,bEnd)<=maximumGap;
+
+const axisCandidates=(moving:Bounds2D,target:Bounds2D,targetId:string,axis:'x'|'y'):Candidate[]=>{
   if(axis==='x'){
+    if(!rangesNear(moving.top,moving.bottom,target.top,target.bottom))return[];
     return [
       {delta:target.left-moving.left,guide:{axis,value:target.left,kind:'edge',targetId}},
       {delta:target.right-moving.right,guide:{axis,value:target.right,kind:'edge',targetId}},
@@ -52,6 +36,7 @@ const axisCandidates=(moving:Bounds,target:Bounds,targetId:string,axis:'x'|'y'):
       {delta:target.centerX-moving.centerX,guide:{axis,value:target.centerX,kind:'center',targetId}},
     ];
   }
+  if(!rangesNear(moving.left,moving.right,target.left,target.right))return[];
   return [
     {delta:target.top-moving.top,guide:{axis,value:target.top,kind:'edge',targetId}},
     {delta:target.bottom-moving.bottom,guide:{axis,value:target.bottom,kind:'edge',targetId}},
