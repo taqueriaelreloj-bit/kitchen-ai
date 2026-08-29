@@ -21,10 +21,10 @@ function rotatedBounds(x: number, y: number, width: number, height: number, rota
 }
 
 export function objectDisplayBounds(object: EditorObject): Bounds2D {
-  const width = Math.max(10, object.widthIn * PLAN_DISPLAY_SCALE);
-  const depthMinimum = object.kind === 'wall' ? 4 : 8;
+  const width = Math.max(4, object.widthIn * PLAN_DISPLAY_SCALE);
+  const depthMinimum = object.kind === 'wall' ? 2 : 4;
   const depth = Math.max(depthMinimum, object.depthIn * PLAN_DISPLAY_SCALE);
-  return rotatedBounds(object.x, object.y, width, depth, object.rotation);
+  return rotatedBounds(object.x * PLAN_DISPLAY_SCALE, object.y * PLAN_DISPLAY_SCALE, width, depth, object.rotation);
 }
 
 export function objectPlanBounds(object: EditorObject): Bounds2D {
@@ -41,7 +41,18 @@ function unionBounds(items: Bounds2D[], fallback: Bounds2D): Bounds2D {
 }
 
 export function projectDisplayBounds(project: EditorProject): Bounds2D {
-  return unionBounds(project.objects.map(objectDisplayBounds), { left: 0, top: 0, right: 900, bottom: 650, width: 900, height: 650, centerX: 450, centerY: 325 });
+  const roomWidth = Math.max(96, project.room.widthM * 39.3701) * PLAN_DISPLAY_SCALE;
+  const roomLength = Math.max(96, project.room.lengthM * 39.3701) * PLAN_DISPLAY_SCALE;
+  return unionBounds(project.objects.map(objectDisplayBounds), {
+    left: 120 * PLAN_DISPLAY_SCALE,
+    top: 120 * PLAN_DISPLAY_SCALE,
+    right: 120 * PLAN_DISPLAY_SCALE + roomWidth,
+    bottom: 120 * PLAN_DISPLAY_SCALE + roomLength,
+    width: roomWidth,
+    height: roomLength,
+    centerX: 120 * PLAN_DISPLAY_SCALE + roomWidth / 2,
+    centerY: 120 * PLAN_DISPLAY_SCALE + roomLength / 2,
+  });
 }
 
 export function projectPlanBounds(project: EditorProject): Bounds2D {
