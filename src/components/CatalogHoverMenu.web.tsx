@@ -64,6 +64,7 @@ export function CatalogHoverMenu({ project, apply, preview }: Props) {
   const [activeCategory, setActiveCategory] = useState<DragCatalogCategoryId>();
   const [draggingId, setDraggingId] = useState<string>();
   const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const dragging = useRef(false);
   const suppressClick = useRef(false);
 
   const open = (categoryId: DragCatalogCategoryId) => {
@@ -71,6 +72,7 @@ export function CatalogHoverMenu({ project, apply, preview }: Props) {
     setActiveCategory(categoryId);
   };
   const scheduleClose = () => {
+    if (dragging.current) return;
     if (closeTimer.current) clearTimeout(closeTimer.current);
     closeTimer.current = setTimeout(() => setActiveCategory(undefined), 180);
   };
@@ -80,15 +82,18 @@ export function CatalogHoverMenu({ project, apply, preview }: Props) {
     setActiveCategory(undefined);
   };
   const beginDrag = (event: any, item: DragCatalogItem) => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
     const serialized = serializeDragCatalogItem(item.id);
     event.dataTransfer.effectAllowed = 'copy';
     event.dataTransfer.setData(KITCHEN_CATALOG_DRAG_MIME, serialized);
     event.dataTransfer.setData('text/plain', serialized);
+    dragging.current = true;
     suppressClick.current = true;
     setDraggingId(item.id);
     if (project.viewMode !== '2d') preview({ ...project, viewMode: '2d' });
   };
   const endDrag = () => {
+    dragging.current = false;
     setDraggingId(undefined);
     setActiveCategory(undefined);
     setTimeout(() => { suppressClick.current = false; }, 0);
@@ -97,7 +102,7 @@ export function CatalogHoverMenu({ project, apply, preview }: Props) {
   return <View style={styles.layer}>
     <View style={styles.bar}>
       <View style={styles.intro}><Text style={styles.introTitle}>Product Catalog</Text><Text style={styles.introHelp}>Hover a category · drag an item into the plan</Text></View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>
+      <AnyView style={styles.categories}>
         {DRAG_CATALOG_CATEGORIES.map((category, index) => {
           const active = activeCategory === category.id;
           const alignRight = index >= DRAG_CATALOG_CATEGORIES.length - 2;
@@ -115,7 +120,7 @@ export function CatalogHoverMenu({ project, apply, preview }: Props) {
               style={[styles.categoryButton, active && styles.categoryButtonActive]}
             >
               <Text style={[styles.categoryIcon, active && styles.categoryTextActive]}>{category.icon}</Text>
-              <View><Text style={[styles.categoryLabel, active && styles.categoryTextActive]}>{category.label}</Text><Text style={[styles.categoryCount, active && styles.categoryCountActive]}>{category.items.length} available</Text></View>
+              <View style={styles.categoryCopy}><Text style={[styles.categoryLabel, active && styles.categoryTextActive]}>{category.label}</Text><Text style={[styles.categoryCount, active && styles.categoryCountActive]}>{category.items.length} available</Text></View>
               <Text style={[styles.chevron, active && styles.categoryTextActive]}>⌄</Text>
             </Pressable>
             {active && <View style={[styles.flyout, alignRight && styles.flyoutRight]}>
@@ -143,7 +148,7 @@ export function CatalogHoverMenu({ project, apply, preview }: Props) {
             </View>}
           </AnyView>;
         })}
-      </ScrollView>
+      </AnyView>
     </View>
   </View>;
 }
@@ -154,11 +159,12 @@ const styles = StyleSheet.create({
   intro: { width: 190, paddingHorizontal: 12, justifyContent: 'center', borderRightWidth: 1, borderRightColor: '#3A4D47' },
   introTitle: { fontSize: 12, fontWeight: '900', color: '#F5F8F7', textTransform: 'uppercase' },
   introHelp: { fontSize: 9, lineHeight: 12, color: '#B8C6C2', marginTop: 2 },
-  categories: { alignItems: 'stretch', paddingHorizontal: 5, overflow: 'visible' },
-  categoryWrap: { position: 'relative', justifyContent: 'center', overflow: 'visible' },
-  categoryButton: { minWidth: 132, minHeight: 50, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 8, borderLeftWidth: 1, borderLeftColor: '#344640' },
+  categories: { flex: 1, flexDirection: 'row', alignItems: 'stretch', paddingHorizontal: 5, overflow: 'visible' },
+  categoryWrap: { position: 'relative', flex: 1, minWidth: 110, maxWidth: 190, justifyContent: 'center', overflow: 'visible' },
+  categoryButton: { width: '100%', minHeight: 50, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 8, borderLeftWidth: 1, borderLeftColor: '#344640' },
   categoryButtonActive: { backgroundColor: '#DDEEE8', borderLeftColor: '#6CA18F' },
   categoryIcon: { width: 22, textAlign: 'center', fontSize: 21, color: '#D6E2DE' },
+  categoryCopy: { flex: 1, minWidth: 0 },
   categoryLabel: { fontSize: 11, fontWeight: '900', color: '#F1F6F4' },
   categoryCount: { fontSize: 8, fontWeight: '700', color: '#9FB0AA', marginTop: 1 },
   categoryCountActive: { color: '#4F6F65' },
