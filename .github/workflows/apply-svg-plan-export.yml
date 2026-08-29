@@ -1,0 +1,27 @@
+name: Apply SVG Plan Export
+
+on:
+  push:
+    branches: [feature/svg-plan-export]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, 'Wire SVG plan export') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/svg-plan-export
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13
+      - run: node scripts/apply-svg-plan-export.mjs
+      - run: |
+          git config user.name "Kitchen AI Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Wire SVG plan export into editor"
+          git push origin HEAD:feature/svg-plan-export
