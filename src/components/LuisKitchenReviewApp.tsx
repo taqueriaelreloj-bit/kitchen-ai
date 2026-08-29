@@ -6,8 +6,18 @@ import { createLuisTenByElevenKitchen } from '../domain/luisKitchenDemo';
 import { EditorProject } from '../domain/editor';
 import { EditorShell } from './EditorShell';
 
+function createReviewProject():EditorProject{
+  const project=createLuisTenByElevenKitchen();
+  return{
+    ...project,
+    name:'Kitchen AI — Professional 3D Review',
+    selectedId:undefined,
+    viewMode:'3d',
+  };
+}
+
 export function LuisKitchenReviewApp() {
-  const [project, setProject] = useState<EditorProject>(() => createLuisTenByElevenKitchen());
+  const [project, setProject] = useState<EditorProject>(createReviewProject);
   return <SafeAreaProvider>
     <StatusBar style="light" />
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
