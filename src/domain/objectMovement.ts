@@ -8,6 +8,7 @@ export type ObjectDragOrigin = {
   y: number;
   wallOffsetIn: number;
 };
+export type ObjectMoveOptions = { snap?: boolean };
 
 export function createObjectDragOrigin(project: EditorProject, id: string): ObjectDragOrigin | undefined {
   const object = project.objects.find(item => item.id === id);
@@ -20,7 +21,7 @@ export function createObjectDragOrigin(project: EditorProject, id: string): Obje
   };
 }
 
-export function moveObjectByPlanDelta(project: EditorProject, origin: ObjectDragOrigin, dx: number, dy: number): EditorProject {
+export function moveObjectByPlanDelta(project: EditorProject, origin: ObjectDragOrigin, dx: number, dy: number, options: ObjectMoveOptions = {}): EditorProject {
   const object = project.objects.find(item => item.id === origin.id);
   if (!object) return project;
   const data = openingData(object);
@@ -30,6 +31,7 @@ export function moveObjectByPlanDelta(project: EditorProject, origin: ObjectDrag
     const along = dx * Math.cos(radians) + dy * Math.sin(radians);
     return moveOpeningAlongWall(project, object.id, origin.wallOffsetIn + along);
   }
-  const snap = (value: number) => project.view2d.snap ? Math.round(value / OBJECT_SNAP_IN) * OBJECT_SNAP_IN : value;
+  const snapEnabled = options.snap ?? project.view2d.snap;
+  const snap = (value: number) => snapEnabled ? Math.round(value / OBJECT_SNAP_IN) * OBJECT_SNAP_IN : value;
   return updateObject(project, object.id, { x: snap(origin.x + dx), y: snap(origin.y + dy) });
 }
