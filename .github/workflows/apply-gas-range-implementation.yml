@@ -21,8 +21,19 @@ jobs:
         with:
           node-version: 22.13
           cache: npm
-      - name: Apply implementation
-        run: node scripts/apply-gas-range-implementation.mjs
+      - name: Patch and apply implementation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/apply-gas-range-implementation.mjs')
+          source = path.read_text()
+          old = r"""      const rangeIdentity = \`${fresh.applianceType ?? ''} ${fresh.productId ?? ''} ${fresh.variantId ?? ''} ${fresh.finishId ?? ''} ${fresh.name}\`.toLowerCase();"""
+          new = """      const rangeIdentity = [fresh.applianceType ?? '', fresh.productId ?? '', fresh.variantId ?? '', fresh.finishId ?? '', fresh.name].join(' ').toLowerCase();"""
+          if old not in source:
+              raise SystemExit('Expected generator line was not found')
+          path.write_text(source.replace(old, new, 1))
+          PY
+          node scripts/apply-gas-range-implementation.mjs
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
