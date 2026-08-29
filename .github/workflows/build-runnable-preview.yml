@@ -1,0 +1,134 @@
+name: Build runnable Kitchen AI preview
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'App.tsx'
+      - 'index.ts'
+      - 'app.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+      - '.github/workflows/build-runnable-preview.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-preview:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify project
+        run: |
+          npm run typecheck
+          npm test
+
+      - name: Export web application
+        run: npm run build:web
+
+      - name: Add one-click Windows launcher
+        shell: bash
+        run: |
+          cat > dist/serve.cjs <<'NODE'
+          const http = require('node:http');
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const { URL } = require('node:url');
+
+          const root = __dirname;
+          const port = Number(process.env.PORT || 4173);
+          const mime = {
+            '.html': 'text/html; charset=utf-8',
+            '.js': 'text/javascript; charset=utf-8',
+            '.css': 'text/css; charset=utf-8',
+            '.json': 'application/json; charset=utf-8',
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.svg': 'image/svg+xml',
+            '.ico': 'image/x-icon',
+            '.woff': 'font/woff',
+            '.woff2': 'font/woff2',
+          };
+
+          function safeFile(requestPath) {
+            const decoded = decodeURIComponent(requestPath.split('?')[0]);
+            const relative = decoded === '/' ? 'index.html' : decoded.replace(/^\/+/, '');
+            const candidate = path.resolve(root, relative);
+            return candidate.startsWith(root + path.sep) || candidate === path.join(root, 'index.html')
+              ? candidate
+              : path.join(root, 'index.html');
+          }
+
+          const server = http.createServer((request, response) => {
+            let file = safeFile(new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`).pathname);
+            if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(root, 'index.html');
+            fs.readFile(file, (error, data) => {
+              if (error) {
+                response.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+                response.end('Kitchen AI could not start.');
+                return;
+              }
+              response.writeHead(200, {
+                'Content-Type': mime[path.extname(file).toLowerCase()] || 'application/octet-stream',
+                'Cache-Control': file.endsWith('index.html') ? 'no-cache' : 'public, max-age=31536000, immutable',
+              });
+              response.end(data);
+            });
+          });
+
+          server.listen(port, '127.0.0.1', () => {
+            console.log(`Kitchen AI is running at http://localhost:${port}`);
+            console.log('Keep this window open while using the program. Press Ctrl+C to stop.');
+          });
+          NODE
+
+          cat > dist/RUN-KITCHEN-AI.bat <<'BAT'
+          @echo off
+          title Kitchen AI
+          cd /d "%~dp0"
+          where node >nul 2>nul
+          if errorlevel 1 (
+            echo Kitchen AI needs Node.js to run.
+            echo Install Node.js, then double-click this file again.
+            pause
+            exit /b 1
+          )
+          start "" "http://localhost:4173"
+          node serve.cjs
+          pause
+          BAT
+
+          cat > dist/README-START-HERE.txt <<'TXT'
+          KITCHEN AI - START HERE
+
+          Windows:
+          1. Double-click RUN-KITCHEN-AI.bat
+          2. Keep the black window open.
+          3. Kitchen AI opens automatically in your browser.
+          4. To stop it, close the black window or press Ctrl+C.
+
+          Your designs are stored by the application in your browser/device during the MVP.
+          TXT
+
+      - name: Upload runnable program
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kitchen-AI-Windows
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
