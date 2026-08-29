@@ -48,7 +48,10 @@ const axisCandidates=(moving:Bounds2D,target:Bounds2D,targetId:string,axis:'x'|'
 
 const nearest=(candidates:Candidate[],tolerance:number)=>candidates
   .filter(candidate=>Math.abs(candidate.delta)<=tolerance)
-  .sort((a,b)=>Math.abs(a.delta)-Math.abs(b.delta))[0];
+  .sort((a,b)=>{
+    const alignmentPriority=(a.guide.kind==='center'?0:1)-(b.guide.kind==='center'?0:1);
+    return alignmentPriority||Math.abs(a.delta)-Math.abs(b.delta);
+  })[0];
 
 export function snapPlanObject(
   moving:EditorObject,

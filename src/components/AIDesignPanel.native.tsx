@@ -1,38 +1,21 @@
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { aiDesignSuggestions, applyAIDesignSuggestion } from '../domain/aiDesign';
+import { LayoutIssue, validateKitchenLayout } from '../domain/designValidation';
 import { EditorProject } from '../domain/editor';
-import * as LayoutCheck from '../domain/layoutCheck';
 
 type Props={project:EditorProject;apply:(project:EditorProject)=>void};
 type Tab='designs'|'check';
-type AnyIssue={
-  id?:string;
-  severity?:'error'|'warning'|'info'|string;
-  code?:string;
-  title?:string;
-  message?:string;
-  description?:string;
-  objectId?:string;
-  objectIds?:string[];
-  relatedObjectIds?:string[];
-};
 
-function runCheck(project:EditorProject){
-  const module=LayoutCheck as unknown as Record<string,unknown>;
-  const checker=(module.checkKitchenLayout??module.runLayoutCheck??module.checkLayout??module.validateKitchenLayout??module.validateLayout) as ((project:EditorProject)=>unknown)|undefined;
-  if(!checker)return{issues:[] as AnyIssue[]};
-  const result=checker(project) as any;
-  return{issues:Array.isArray(result)?result:Array.isArray(result?.issues)?result.issues:[] as AnyIssue[]};
-}
+function runCheck(project:EditorProject):{issues:LayoutIssue[]}{return{issues:validateKitchenLayout(project)};}
 
 function Button({label,onPress,active=false}:{label:string;onPress:()=>void;active?:boolean}){
   return <Pressable accessibilityRole="button" accessibilityState={{selected:active}} onPress={onPress} style={[s.button,active&&s.buttonActive]}><Text style={[s.buttonText,active&&s.buttonTextActive]}>{label}</Text></Pressable>;
 }
 
-const issueTitle=(issue:AnyIssue)=>issue.title??issue.message??issue.description??issue.code??'Layout issue';
-const issueDetail=(issue:AnyIssue)=>issue.title?(issue.message??issue.description):issue.description;
-const targetId=(issue:AnyIssue)=>issue.objectId??issue.objectIds?.[0]??issue.relatedObjectIds?.[0];
+const issueTitle=(issue:LayoutIssue)=>issue.title;
+const issueDetail=(issue:LayoutIssue)=>issue.detail;
+const targetId=(issue:LayoutIssue)=>issue.objectIds[0];
 
 export function AIDesignPanel({project,apply}:Props){
   const[tab,setTab]=useState<Tab>('designs');
@@ -66,7 +49,7 @@ export function AIDesignPanel({project,apply}:Props){
       {report.issues.length===0?<View style={s.okCard}><Text style={s.okTitle}>✓ Layout check passed</Text><Text style={s.okText}>No blocking layout problems were detected.</Text></View>:report.issues.map((issue,index)=>{
         const severity=issue.severity==='error'?'error':issue.severity==='warning'?'warning':'info';
         const target=targetId(issue);
-        return <View key={issue.id??`${issue.code??severity}-${index}`} style={[s.issue,severity==='error'&&s.issueError,severity==='warning'&&s.issueWarning]}>
+        return <View key={issue.id??`${severity}-${index}`} style={[s.issue,severity==='error'&&s.issueError,severity==='warning'&&s.issueWarning]}>
           <View style={s.issueHeader}><Text style={[s.badge,severity==='error'&&s.badgeError,severity==='warning'&&s.badgeWarning]}>{severity.toUpperCase()}</Text><Text style={s.issueTitle}>{issueTitle(issue)}</Text></View>
           {!!issueDetail(issue)&&<Text style={s.issueDetail}>{issueDetail(issue)}</Text>}
           {target&&<Button label="Select Problem Object" onPress={()=>apply({...project,selectedId:target})}/>} 

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 480 360" role="img" aria-label="Retro Pastel Blue">
+<rect width="480" height="360" rx="24" fill="#F3F5F4"/>
+<ellipse cx="120" cy="286" rx="84" ry="13" fill="#15201D" opacity=".12"/>
+<g fill="#9FCBE4" stroke="#D9DEE0" stroke-width="4" stroke-linejoin="round"><rect x="56" y="44" width="128" height="58" rx="13"/><rect x="56" y="106" width="128" height="158" rx="10"/></g>
+<g fill="none" stroke="#E5E9EA" stroke-width="7" stroke-linecap="round"><path d="M70 89h38"/><path d="M70 143h38"/><path d="M58 104h124"/></g>
+<text x="218" y="92" font-family="Arial,sans-serif" font-size="23" font-weight="700" fill="#1E2B27">Retro Pastel Blue</text>
+<text x="218" y="125" font-family="Arial,sans-serif" font-size="15" fill="#596762">Retro / mid-century</text>
+<text x="218" y="157" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#315F55">24 × 63 × 26 in</text>
+<text x="218" y="190" font-family="Arial,sans-serif" font-size="13" fill="#596762">glTF 2.0 · meters · Y-up</text>
+<rect x="218" y="218" width="146" height="34" rx="17" fill="#DDEEE8"/>
+<text x="291" y="240" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#0E4939">Kitchen AI Catalog</text>
+</svg>

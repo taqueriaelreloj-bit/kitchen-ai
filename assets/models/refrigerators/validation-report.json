@@ -1,0 +1,76 @@
+{
+  "models": [
+    {
+      "id": "refrigerator-french-door-stainless",
+      "file": "refrigerator-french-door-stainless.gltf",
+      "bytes": 3443,
+      "triangles": 96,
+      "boundsM": [
+        [
+          -0.4572,
+          0.0,
+          -0.447
+        ],
+        [
+          0.4572,
+          1.778,
+          0.381
+        ]
+      ]
+    },
+    {
+      "id": "refrigerator-panel-ready-built-in",
+      "file": "refrigerator-panel-ready-built-in.gltf",
+      "bytes": 3460,
+      "triangles": 96,
+      "boundsM": [
+        [
+          -0.4572,
+          0.00019999999999997797,
+          -0.355
+        ],
+        [
+          0.4572,
+          2.1338,
+          0.3048
+        ]
+      ]
+    },
+    {
+      "id": "refrigerator-smart-black",
+      "file": "refrigerator-smart-black.gltf",
+      "bytes": 3409,
+      "triangles": 96,
+      "boundsM": [
+        [
+          -0.4572,
+          0.0,
+          -0.447
+        ],
+        [
+          0.4572,
+          1.778,
+          0.381
+        ]
+      ]
+    },
+    {
+      "id": "refrigerator-retro-blue",
+      "file": "refrigerator-retro-blue.gltf",
+      "bytes": 3427,
+      "triangles": 96,
+      "boundsM": [
+        [
+          -0.3048,
+          -9.999999999998899e-05,
+          -0.395
+        ],
+        [
+          0.3048,
+          1.6001,
+          0.3302
+        ]
+      ]
+    }
+  ]
+}

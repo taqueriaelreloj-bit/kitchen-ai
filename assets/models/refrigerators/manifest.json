@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 2,
+  "collection": "Kitchen AI Professional Refrigerator Collection",
+  "assetType": "glTF 2.0 JSON with embedded binary buffer",
+  "coordinateSystem": "Y-up, meters, origin at floor center",
+  "catalogLod": "embedded preview",
+  "materialMode": "glTF metallic-roughness PBR with embedded vertex colors",
+  "externalTextures": false,
+  "masterPackage": "Higher-detail GLB masters are included in the downloadable source package.",
+  "models": [
+    {
+      "id": "refrigerator-french-door-stainless",
+      "name": "36 in French-Door Stainless Refrigerator",
+      "style": "Contemporary",
+      "finish": "Brushed stainless steel",
+      "widthIn": 36,
+      "heightIn": 70,
+      "depthIn": 30,
+      "category": "refrigerator",
+      "doorConfiguration": "French door with bottom freezer",
+      "features": [
+        "Water and ice dispenser",
+        "Bottom freezer drawer",
+        "Brushed metal finish"
+      ],
+      "modelUri": "assets/models/refrigerators/refrigerator-french-door-stainless.gltf",
+      "thumbnailUri": "assets/models/refrigerators/thumbnails/refrigerator-french-door-stainless.svg",
+      "units": "meters",
+      "upAxis": "Y",
+      "origin": "floor-center",
+      "pbr": true,
+      "webOptimized": true,
+      "lod": "catalog-preview",
+      "fileBytes": 3443,
+      "triangles": 96,
+      "boundsM": [
+        [
+          -0.4572,
+          0.0,
+          -0.447
+        ],
+        [
+          0.4572,
+          1.778,
+          0.381
+        ]
+      ]
+    },
+    {
+      "id": "refrigerator-panel-ready-built-in",
+      "name": "36 in Panel-Ready Built-In Refrigerator",
+      "style": "Transitional / built-in",
+      "finish": "Panel-ready matte white",
+      "widthIn": 36,
+      "heightIn": 84,
+      "depthIn": 24,
+      "category": "refrigerator",
+      "doorConfiguration": "Panel-ready French door with bottom freezer",
+      "features": [
+        "Integrated appliance panels",
+        "Hidden handle channels",
+        "Toe-kick ventilation"
+      ],
+      "modelUri": "assets/models/refrigerators/refrigerator-panel-ready-built-in.gltf",
+      "thumbnailUri": "assets/models/refrigerators/thumbnails/refrigerator-panel-ready-built-in.svg",
+      "units": "meters",
+      "upAxis": "Y",
+      "origin": "floor-center",
+      "pbr": true,
+      "webOptimized": true,
+      "lod": "catalog-preview",
+      "fileBytes": 3460,
+      "triangles": 96,
+      "boundsM": [
+        [
+          -0.4572,
+          0.00019999999999997797,
+          -0.355
+        ],
+        [
+          0.4572,
+          2.1338,
+          0.3048
+        ]
+      ]
+    },
+    {
+      "id": "refrigerator-smart-black",
+      "name": "36 in Black Glass Smart Refrigerator",
+      "style": "Modern smart appliance",
+      "finish": "Black glass and black stainless",
+      "widthIn": 36,
+      "heightIn": 70,
+      "depthIn": 30,
+      "category": "refrigerator",
+      "doorConfiguration": "French door with bottom freezer",
+      "features": [
+        "Integrated smart display",
+        "Black glass doors",
+        "Bottom freezer drawer"
+      ],
+      "modelUri": "assets/models/refrigerators/refrigerator-smart-black.gltf",
+      "thumbnailUri": "assets/models/refrigerators/thumbnails/refrigerator-smart-black.svg",
+      "units": "meters",
+      "upAxis": "Y",
+      "origin": "floor-center",
+      "pbr": true,
+      "webOptimized": true,
+      "lod": "catalog-preview",
+      "fileBytes": 3409,
+      "triangles": 96,
+      "boundsM": [
+        [
+          -0.4572,
+          0.0,
+          -0.447
+        ],
+        [
+          0.4572,
+          1.778,
+          0.381
+        ]
+      ]
+    },
+    {
+      "id": "refrigerator-retro-blue",
+      "name": "24 in Retro Pastel Blue Refrigerator",
+      "style": "Retro / mid-century",
+      "finish": "Pastel blue enamel with chrome",
+      "widthIn": 24,
+      "heightIn": 63,
+      "depthIn": 26,
+      "category": "refrigerator",
+      "doorConfiguration": "Top freezer",
+      "features": [
+        "Rounded retro silhouette",
+        "Chrome pull handles",
+        "Brand-neutral original design"
+      ],
+      "modelUri": "assets/models/refrigerators/refrigerator-retro-blue.gltf",
+      "thumbnailUri": "assets/models/refrigerators/thumbnails/refrigerator-retro-blue.svg",
+      "units": "meters",
+      "upAxis": "Y",
+      "origin": "floor-center",
+      "pbr": true,
+      "webOptimized": true,
+      "lod": "catalog-preview",
+      "fileBytes": 3427,
+      "triangles": 96,
+      "boundsM": [
+        [
+          -0.3048,
+          -9.999999999998899e-05,
+          -0.395
+        ],
+        [
+          0.3048,
+          1.6001,
+          0.3302
+        ]
+      ]
+    }
+  ]
+}
