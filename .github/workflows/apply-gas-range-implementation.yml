@@ -103,7 +103,7 @@ jobs:
       - run: npm run build:web
       - name: Commit verified implementation
         run: |
-          git rm scripts/apply-gas-range-implementation.mjs .github/workflows/apply-gas-range-implementation.yml
+          git rm -f scripts/apply-gas-range-implementation.mjs .github/workflows/apply-gas-range-implementation.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
