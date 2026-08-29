@@ -1,0 +1,40 @@
+name: Build professional room 3D review
+
+on:
+  push:
+    branches:
+      - review/professional-room-3d-v2
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out review branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify review build
+        run: |
+          npm run typecheck
+          npm test
+          npm run build:web
+
+      - name: Upload clickable review
+        uses: actions/upload-artifact@v4
+        with:
+          name: kitchen-ai-professional-room-3d-review
+          path: dist
+          if-no-files-found: error
+          retention-days: 7
