@@ -63,7 +63,7 @@ function ItemPreview({ item }: { item: DragCatalogItem }) {
 export function CatalogHoverMenu({ project, apply, preview }: Props) {
   const [activeCategory, setActiveCategory] = useState<DragCatalogCategoryId>();
   const [draggingId, setDraggingId] = useState<string>();
-  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const suppressClick = useRef(false);
 
   const open = (categoryId: DragCatalogCategoryId) => {
