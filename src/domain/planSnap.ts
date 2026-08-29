@@ -19,8 +19,14 @@ type Candidate = {
   guide: AlignmentGuide;
 };
 
+const precise=(value:number)=>Math.round(value*1_000_000_000)/1_000_000_000;
+const preciseBounds=(bounds:Bounds2D):Bounds2D=>({
+  left:precise(bounds.left),top:precise(bounds.top),right:precise(bounds.right),bottom:precise(bounds.bottom),
+  width:precise(bounds.width),height:precise(bounds.height),centerX:precise(bounds.centerX),centerY:precise(bounds.centerY),
+});
+
 export function objectPlanBounds(object:EditorObject,x=object.x,y=object.y):Bounds2D{
-  return objectDisplayBounds(x===object.x&&y===object.y?object:{...object,x,y});
+  return preciseBounds(objectDisplayBounds(x===object.x&&y===object.y?object:{...object,x,y}));
 }
 
 const rangesNear=(aStart:number,aEnd:number,bStart:number,bEnd:number,maximumGap=36)=>Math.max(aStart,bStart)-Math.min(aEnd,bEnd)<=maximumGap;
@@ -77,7 +83,7 @@ export function snapPlanObject(
   const xSnap=nearest(xCandidates,tolerance),ySnap=nearest(yCandidates,tolerance);
   if(xSnap){x+=xSnap.delta;guides.push(xSnap.guide);}
   if(ySnap){y+=ySnap.delta;guides.push(ySnap.guide);}
-  return{x:Math.round(x*100)/100,y:Math.round(y*100)/100,guides};
+  return{x:precise(x),y:precise(y),guides};
 }
 
 export function guideExtent(objects:EditorObject[],axis:'x'|'y'){
