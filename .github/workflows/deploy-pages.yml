@@ -2,16 +2,6 @@ name: Publish Kitchen AI web preview
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'App.tsx'
-      - 'index.ts'
-      - 'app.json'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'src/**'
-      - '.github/workflows/deploy-pages.yml'
 
 permissions:
   contents: read
@@ -54,8 +44,6 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
