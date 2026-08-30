@@ -87,7 +87,7 @@ export function createLuisTenByElevenKitchen(): EditorProject {
   const design: KitchenDesign = {
     id: 'clean-design-10x11',
     name: 'Clean 10 × 11 Starter Kitchen',
-    description: 'A balanced 10-foot appliance wall with a compact preparation island and clear circulation.',
+    description: 'A balanced 10-foot appliance wall shown from the open front-left corner, with a compact sink island and clear circulation.',
     style: 'modern',
     cabinetColor: 'white',
     countertop: 'quartz',
