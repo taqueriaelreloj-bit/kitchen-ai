@@ -1,0 +1,57 @@
+name: Apply clean no-camera layout fix v2
+
+on:
+  push:
+    branches: [fix/clean-manual-starter-layout]
+    paths:
+      - '.github/workflows/apply-clean-layout-fix-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-test-commit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/clean-manual-starter-layout
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13
+          cache: npm
+
+      - name: Apply corrected source patches
+        shell: bash
+        run: |
+          sed -n '/^[[:space:]]*H4s/{s/^[[:space:]]*//;p;q;}' .github/workflows/apply-clean-layout-fix.yml | base64 -d | gzip -d > /tmp/clean-layout.patch
+          git apply --check /tmp/clean-layout.patch
+          git apply /tmp/clean-layout.patch
+          cat <<'B64' | base64 -d | gzip -d > /tmp/clean-layout-fixup.patch
+          H4sIAB13k2oC/61X627bNhT+76fgr1muJUWSZSd2ka1I0m7BWqxotxZoMQS0RMVcZVEjqVxaFNg77MceaG+yJ9k5IiXbso0lWQxYl8PD7/Dcj1KeZcTzLrkm9EDJ5ODiQjOl1cXFQV5x9SPXyYIVZ2wpfKT7WpH53fh6vEjZDUnjw8mEJr6fjdLgMAhIGASTOO55nndXib3hcHhnqc+eEW/qTskQL/CSMpVIPmdO/zRntADx5O+/SBiST2YzMCxF3yXOgBx/S770CP4SUShNSil+Y4kmxySRjGr2EkT+zIqT2+c5u2KFle4Mnq5vKoTUi/c0z2GbBfDFHG/Kz8AkjnlBYebJ5yk5Pj4m/WvY5NXbvTDIdH8T9xr0ezgs7vbC0KB6K1RJi0t2b8gELenVe71R1IVkmeSXTFIt5EOR1yC80aQjgKucFukDoRUvPnkGoT8gVBF9WzKRdbE+FtVyzuSv5BsIieH/tZexVMIKzSRLUZ3hI9lrw1IZlR68LXRHwgMN9hBTEfMzu96WLPluRr4QRIKHuRB1Cn592vAlokKbaFFu8J5WWlR6xw64Y37HE/eQDOvrQzP863pucaUqdp4qMNEVzXkKuW6T+yW9hZM4VuWBv6SlU3MjVP0A5moSld2AEtpp0HwllsxBawJr6itNpVbvuV44fXHFZE5Lrz8YDHwtTpiT0VyxJs47QAO/EFDbxKkoNOWF0zfm9TCiIbQS5u2IbRsB94bqgNxXsUornrIdiqHN8YaXtNt0UrGE02zX9KbZ7F23TSaJgzCII9+fBME0moy2m8x+hFVz2c+DQReGIzeKyBDvYYSBB2aBak2yqkg0F8V/dIkZeZ5ySNPXtqvYQFwwzNjzYkamE9eQpNAUAWfQyQK3sZzXRCujbScwKXjGMlrlWjl1rYdI/2LCiKczW/5xiyn/rlkq6JLB4nOgkxrrnz/+xJRZcdzMSBQH9uV2RsKoebnmqV7ggcNRZEmbSnibSkzNxloHVObggLwCOxNZIcYRGZJRhJcYLxPQCkQRXoDVlN9ba8asPKGqLr45TdhPBZ7bmQPplM55wbRjSzxyekj3wiMwRh9EgLTXQCUIAKTwaOCuGrVLAhOfK0G/lCWTHUloyF2SKuTdEFUb1LLuk9bbbilrskwknVJNc3H5PVVvkMfpX1LVdl0v9uaVLJjs+LvTm11TBuqlThuy0WZDAXwARwdZpBbWrKZ8yQoFflQvRfKJAYyWFbNBuaEWqGmqczgeY3kO47Gpz4+QJsZSqaTXTN7RN4bZemcUo3cgwra9M4o31Rh33dNpz/u89GaNz+n0Zckgmr1UwLPCspszpXa7rTP4bHhvd6vveHGCKr6oBZIzEEjWz3V/px7FjVMPIxca6zCc1PfHcStUgnhsU53M2QKKOdEL1gwsoAm289DLhNBeyiCBpRDLtaKAzeq8mW5sQfV93xzFLDjWyht2Xm9y1sZ2fXPFjinWuHGEg0VUR9Fb4CPnHT6omeF46jYCsWoeRX40bkXUlKOaYre0xTSOWlrKSkOL4pa2qrAjqLDokSiop6AQKu7k0bqRnelm5GOrexsM7ZHtl0irZ9OQWo6mVm8Q6rxtKXUtcvdOAlecXb/gWvPicmsK2FyzE0CWMRqPA9+Hxj8fBYd7J4DO7q3u31lHS0+O0NBwne6yc8Z1dPYOdjVTYse0LkFI3POO5hXE0Tv7+pZ/Zi4pV9E8h2m4HkIt0BlXUG5uT2pyO4OutSp6RXlO5zl7j1EEG19RvYAZ9caBzt2K9esYIx4paZqCWuQJiXai/FDH2F4YE4JbOO1c8hlyE7+Vc7osP8CzY2Bgyuyc88Bqag7mbh2gXTcSB2aWbbrl9Qcj57HQa3CoROB0sqzwCx4SRUKlASZSlddUpgTqKNYl8AbkFfxVyaGJlDg9IV2y3ytICpY2pvFXB95tlSyH2uw0yjzBaB3AyfBWe0YyDc19raQ1H13ojSi1aYTYbu9fjOqREcMRAAA=
+          B64
+          git apply --check /tmp/clean-layout-fixup.patch
+          git apply /tmp/clean-layout-fixup.patch
+          rm -rf .github/patches
+          rm -f .github/workflows/apply-clean-layout-fix.yml .github/workflows/apply-clean-layout-fix-v2.yml .github/workflows/export-clean-layout-source.yml
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify corrected program
+        run: |
+          npm run typecheck
+          npm run lint
+          npm test
+          npm run build:web
+
+      - name: Commit corrected source
+        shell: bash
+        run: |
+          git config user.name "Kitchen AI Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix no-camera flow and clean starter kitchen layout"
+          git push origin HEAD:fix/clean-manual-starter-layout
