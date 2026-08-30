@@ -335,7 +335,7 @@ def add_shelf(root, col, m, w, d, z, label="Shelf"):
             cylinder("ShelfPin", s(.125), s(.18), (x, -d / 2 + s(.8), z + dz), m["steel"], col, root, rot=(math.pi / 2, 0, 0), vertices=12)
 
 
-def add_door_pair(root, col, m, w, d, bottom, top, glass=False):
+def add_door_pair(root, col, m, w, d, bottom, top, glass=False, placement="lower"):
     frame = s(FACE_FRAME_WIDTH_IN)
     gap = s(DOOR_REVEAL_IN)
     door_t = s(DOOR_IN)
@@ -344,12 +344,22 @@ def add_door_pair(root, col, m, w, d, bottom, top, glass=False):
     count = 1 if inner_w < s(18) else 2
     each = (inner_w - gap * (count - 1)) / count
     y = -d / 2 - s(FACE_FRAME_IN) - door_t / 2
+    pull_length_in = 5.0 if face_h < s(24) else 8.0 if face_h <= s(36) else 14.0
     for i in range(count):
         x = -inner_w / 2 + each / 2 + i * (each + gap)
         zc = bottom + gap + face_h / 2
         add_shaker_panel(root, col, m, f"Door_{i+1}", x, y, zc, each, face_h, glass=glass)
-        handle_x = x + (each * .36 if i == 0 else -each * .36)
-        add_handle(root, col, m, handle_x, y - s(.35), zc, min(8.0, max(4.0, face_h * 12 * .30)), True)
+        shaker_frame = min(s(DOOR_FRAME_WIDTH_IN), each * .205, face_h * .205)
+        # Center hardware on the opening-side Shaker stile, independent of door width.
+        handle_x = x + (each / 2 - shaker_frame / 2 if i == 0 else -each / 2 + shaker_frame / 2)
+        post_offset = s(pull_length_in * .35)
+        if placement == "upper":
+            handle_z = bottom + gap + s(3) + post_offset
+        elif placement == "tall":
+            handle_z = min(top - s(7), max(bottom + s(7), s(42)))
+        else:
+            handle_z = top - gap - s(3) - post_offset
+        add_handle(root, col, m, handle_x, y - s(.35), handle_z, pull_length_in, True)
         hinge_x = x - each * .42 if i == 0 else x + each * .42
         hinge_levels = (.16, .50, .84) if face_h > s(48) else (.22, .78)
         for frac in hinge_levels:
@@ -378,7 +388,9 @@ def add_drawer_box(root, col, m, w, d, z, face_h, index):
     drawer_frame_in = min(1.75, max(.75, face_h * IN_PER_STUD * .19))
     add_shaker_panel(root, col, m, f"Drawer{index}_Face", 0, face_y, z,
                      w - s(3.25), face_h, frame_in=drawer_frame_in)
-    add_handle(root, col, m, 0, face_y - s(.35), z + face_h * .15, min(8.0, max(4.0, w * 12 * .35)), False)
+    width_in = w * IN_PER_STUD
+    pull_length_in = 5.0 if width_in < 16 else 8.0 if width_in <= 32 else 12.0
+    add_handle(root, col, m, 0, face_y - s(.35), z, pull_length_in, False)
 
 
 def build_cabinet(kind, root, col, m, w, d, h):
@@ -393,7 +405,7 @@ def build_cabinet(kind, root, col, m, w, d, h):
         drawer_z = h - drawer_h / 2 - s(1.75)
         add_drawer_box(root, col, m, w, d, drawer_z, drawer_h, 1)
         add_frame_rail(root, col, m, w, d, h - drawer_h - s(1.35), "DrawerDividerRail")
-        add_door_pair(root, col, m, w, d, bottom + s(1.5), h - drawer_h - s(2.1), False)
+        add_door_pair(root, col, m, w, d, bottom + s(1.5), h - drawer_h - s(2.1), False, "lower")
 
     elif kind == "drawers":
         usable = h - bottom - s(2.5)
@@ -411,29 +423,29 @@ def build_cabinet(kind, root, col, m, w, d, h):
         add_shaker_panel(root, col, m, "SinkFalseFront", 0, face_y, false_z,
                          w - s(3.25), false_h)
         add_frame_rail(root, col, m, w, d, h - false_h - s(1.25), "SinkDividerRail")
-        add_door_pair(root, col, m, w, d, bottom + s(1.5), h - false_h - s(2.0), False)
+        add_door_pair(root, col, m, w, d, bottom + s(1.5), h - false_h - s(2.0), False, "lower")
         box("SinkPlumbingVoid", (w - s(4), d - s(4), s(8)), (0, s(1), bottom + s(8)), m["edge"], col, root, .002)
 
     elif kind == "corner":
         add_shelf(root, col, m, w, d, bottom + (h - bottom) * .45)
-        add_door_pair(root, col, m, w * .55, d, bottom + s(1.5), h - s(1.5), False)
+        add_door_pair(root, col, m, w * .55, d, bottom + s(1.5), h - s(1.5), False, "lower")
         box("CornerBlindPanel", (w * .40, s(DOOR_IN), h - bottom - s(3)), (w * .28, -d / 2 - s(1.0), bottom + (h - bottom) / 2), m["cab"], col, root, .01)
 
     elif kind in {"upper", "glass"}:
         for frac in (.34, .67):
             add_shelf(root, col, m, w, d, h * frac)
-        add_door_pair(root, col, m, w, d, s(1.5), h - s(1.5), kind == "glass")
+        add_door_pair(root, col, m, w, d, s(1.5), h - s(1.5), kind == "glass", "upper")
         box("TopHangingRail", (w - s(1.5), s(.5), s(2.5)), (0, d / 2 - s(.5), h - s(1.75)), m["wood"], col, root, .003)
         box("BottomHangingRail", (w - s(1.5), s(.5), s(2.5)), (0, d / 2 - s(.5), s(1.75)), m["wood"], col, root, .003)
 
     elif kind == "tall":
         for frac in (.20, .38, .56, .74):
             add_shelf(root, col, m, w, d, bottom + (h - bottom) * frac)
-        add_door_pair(root, col, m, w, d, bottom + s(1.5), h - s(1.5), False)
+        add_door_pair(root, col, m, w, d, bottom + s(1.5), h - s(1.5), False, "tall")
 
     elif kind == "oven-tower":
         add_shelf(root, col, m, w, d, bottom + s(12), "LowerShelf")
-        add_door_pair(root, col, m, w, d, bottom + s(1.5), h * .36, False)
+        add_door_pair(root, col, m, w, d, bottom + s(1.5), h * .36, False, "lower")
         oven_bottom = h * .40
         oven_h = s(30)
         add_frame_rail(root, col, m, w, d, oven_bottom - s(.75), "OvenLowerRail")
@@ -447,7 +459,7 @@ def build_cabinet(kind, root, col, m, w, d, h):
         box("OvenControlPanel", (w - s(3), s(.82), s(4.25)), (0, face_y, oven_bottom + oven_h - s(2.25)), m["steel"], col, root, .008)
         box("OvenDisplay", (s(5.5), s(.12), s(1.3)), (0, face_y - s(.48), oven_bottom + oven_h - s(2.25)), m["screen"], col, root, .003)
         add_handle(root, col, m, 0, face_y - s(.4), oven_bottom + oven_h * .82, min(20, w * 12 - 8), False)
-        add_door_pair(root, col, m, w, d, oven_bottom + oven_h + s(2), h - s(1.5), False)
+        add_door_pair(root, col, m, w, d, oven_bottom + oven_h + s(2), h - s(1.5), False, "upper")
 
     elif kind == "fridge-surround":
         box("LeftEndPanel", (s(.75), d, h - bottom), (-w / 2 + s(.375), 0, bottom + (h - bottom) / 2), m["cab"], col, root)
@@ -456,7 +468,7 @@ def build_cabinet(kind, root, col, m, w, d, h):
         box("BridgeBottom", (w - s(1.5), d, s(.75)), (0, 0, bridge_bottom), m["wood"], col, root)
         box("FridgeOpeningBackRail", (w - s(3), s(.75), s(3)), (0, d / 2 - s(.5), bridge_bottom - s(1.5)), m["wood"], col, root)
         add_frame_rail(root, col, m, w, d, bridge_bottom, "BridgeFaceRail")
-        add_door_pair(root, col, m, w, d, bridge_bottom + s(1.5), h - s(1.5), False)
+        add_door_pair(root, col, m, w, d, bridge_bottom + s(1.5), h - s(1.5), False, "upper")
 
 
 def add_leveling_feet(root, col, m, w, d):
