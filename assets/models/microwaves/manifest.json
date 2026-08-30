@@ -1,0 +1,55 @@
+{
+  "collection": "Kitchen AI Microwave Collection",
+  "version": 1,
+  "format": "glTF 2.0",
+  "units": "meters",
+  "upAxis": "Y",
+  "origin": "floor-center",
+  "defaultFinish": "stainless-steel",
+  "models": [
+    {
+      "id": "microwave-countertop-24-stainless",
+      "name": "24 in Stainless Countertop Microwave",
+      "category": "microwave",
+      "installation": "countertop",
+      "dimensionsIn": {
+        "width": 24,
+        "height": 14,
+        "depth": 18
+      },
+      "defaultElevationIn": 36,
+      "hasExtractor": false,
+      "model": "microwave-countertop-24-stainless.gltf",
+      "thumbnail": "thumbnails/microwave-countertop-24-stainless.svg",
+      "features": [
+        "Black glass door",
+        "Digital controls",
+        "Countertop placement"
+      ]
+    },
+    {
+      "id": "microwave-over-range-30-stainless",
+      "name": "30 in Over-the-Range Microwave with Extractor",
+      "category": "microwave",
+      "installation": "over-the-range",
+      "dimensionsIn": {
+        "width": 30,
+        "height": 16.5,
+        "depth": 16
+      },
+      "defaultElevationIn": 54,
+      "hasExtractor": true,
+      "venting": [
+        "recirculating",
+        "ducted"
+      ],
+      "model": "microwave-over-range-30-stainless.gltf",
+      "thumbnail": "thumbnails/microwave-over-range-30-stainless.svg",
+      "features": [
+        "Integrated extractor fan",
+        "Grease filters",
+        "Cooktop light"
+      ]
+    }
+  ]
+}

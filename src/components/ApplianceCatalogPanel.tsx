@@ -12,12 +12,20 @@ import {
   gasRangeFinishPatch,
   isGasRangeObject,
 } from '../domain/applianceCatalog';
+import {
+  MICROWAVE_CATALOG,
+  MicrowaveCatalogItem,
+  MicrowaveModelId,
+  createCatalogMicrowave,
+} from '../domain/microwaveCatalog';
 import { EditorObject, EditorProject, updateObject } from '../domain/editor';
 
 type Apply = (project: EditorProject, record?: boolean) => void;
+type CatalogItem = ApplianceCatalogItem | MicrowaveCatalogItem;
+type ThumbnailProps = { item: CatalogItem };
 
-type ThumbnailProps = { item: ApplianceCatalogItem };
 function RangeThumbnail({ item }: ThumbnailProps) {
+  if (item.category !== 'gas-range') return null;
   const griddle = item.hasCenterGriddle;
   const doubleOven = item.ovenDoorCount === 2;
   const burnerPositions: ViewStyle[] = griddle
@@ -43,25 +51,47 @@ function RefrigeratorThumbnail({ item }: ThumbnailProps) {
   </View>;
 }
 
-function CatalogThumbnail({ item }: ThumbnailProps) {
-  return item.category === 'gas-range' ? <RangeThumbnail item={item}/> : <RefrigeratorThumbnail item={item}/>;
+function MicrowaveThumbnail({ item }: { item: MicrowaveCatalogItem }) {
+  const overRange = item.installation === 'over-the-range';
+  return <View style={[styles.microwaveThumb, { backgroundColor: item.color }]}>
+    {overRange && <View style={styles.microwaveTopVent}>{Array.from({ length: 7 }, (_, index) => <View key={index} style={styles.microwaveVentSlat}/>)}</View>}
+    <View style={styles.microwaveFront}>
+      <View style={styles.microwaveDoor}><View style={styles.microwaveMesh}/></View>
+      <View style={styles.microwaveHandle}/>
+      <View style={styles.microwavePanel}><View style={styles.microwaveDisplay}/>{Array.from({ length: 9 }, (_, index) => <View key={index} style={styles.microwaveKey}/>)}</View>
+    </View>
+    {overRange
+      ? <View style={styles.microwaveUnderside}><View style={styles.microwaveFilter}/><View style={styles.microwaveLight}/><View style={styles.microwaveFilter}/></View>
+      : <View style={styles.microwaveFeet}><View style={styles.microwaveFoot}/><View style={styles.microwaveFoot}/></View>}
+  </View>;
 }
 
-function CatalogCard({ item, onPress }: { item: ApplianceCatalogItem; onPress: () => void }) {
+function CatalogThumbnail({ item }: ThumbnailProps) {
+  if (item.category === 'gas-range') return <RangeThumbnail item={item}/>;
+  if (item.category === 'microwave') return <MicrowaveThumbnail item={item}/>;
+  return <RefrigeratorThumbnail item={item}/>;
+}
+
+function CatalogCard({ item, onPress }: { item: CatalogItem; onPress: () => void }) {
   const details = item.category === 'gas-range'
     ? `${item.widthIn}\" · Gas · ${item.burnerCount} burners${item.hasCenterGriddle ? ' · Griddle' : ''}`
-    : `${item.widthIn}\" × ${item.heightIn}\" · ${item.style}`;
+    : item.category === 'microwave'
+      ? `${item.widthIn}\" × ${item.heightIn}\" · ${item.hasExtractor ? 'Extractor integrated' : 'Countertop'}`
+      : `${item.widthIn}\" × ${item.heightIn}\" · ${item.style}`;
+  const finishLabel = item.category === 'gas-range' || item.category === 'microwave'
+    ? 'Stainless Steel default'
+    : item.finish;
   return <Pressable
     accessibilityRole="button"
     accessibilityLabel={`Add ${item.name}`}
     accessibilityHint="Adds this appliance to the kitchen plan"
     onPress={onPress}
-    style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+    style={({ pressed }: { pressed: boolean }) => [styles.card, pressed && styles.cardPressed]}
   >
     <View style={styles.thumbnailStage}><CatalogThumbnail item={item}/></View>
     <Text numberOfLines={2} style={styles.cardTitle}>{item.shortName}</Text>
     <Text numberOfLines={2} style={styles.cardMeta}>{details}</Text>
-    <View style={styles.defaultFinishRow}><View style={[styles.defaultFinishDot, { backgroundColor: item.color }]}/><Text style={styles.defaultFinishText}>{item.category === 'gas-range' ? 'Stainless Steel default' : item.finish}</Text></View>
+    <View style={styles.defaultFinishRow}><View style={[styles.defaultFinishDot, { backgroundColor: item.color }]}/><Text style={styles.defaultFinishText}>{finishLabel}</Text></View>
   </Pressable>;
 }
 
@@ -73,10 +103,13 @@ export function ApplianceCatalogPanel({ project, apply }: { project: EditorProje
   };
   const addRange = (id: GasRangeModelId) => place(createCatalogGasRange(id));
   const addRefrigerator = (id: RefrigeratorModelId) => place(createCatalogRefrigerator(id));
+  const addMicrowave = (id: MicrowaveModelId) => place(createCatalogMicrowave(id));
   return <ScrollView contentContainerStyle={styles.panel}>
     <View style={styles.headingRow}><View><Text style={styles.heading}>Appliances</Text><Text style={styles.subheading}>Drag-ready catalog objects with real dimensions</Text></View><View style={styles.liveBadge}><Text style={styles.liveBadgeText}>2D + 3D</Text></View></View>
     <Text style={styles.category}>Gas Ranges / Estufas de gas</Text>
     <View style={styles.grid}>{GAS_RANGE_CATALOG.map(item => <CatalogCard key={item.id} item={item} onPress={() => addRange(item.id as GasRangeModelId)}/>)}</View>
+    <Text style={styles.category}>Microwaves / Microondas</Text>
+    <View style={styles.grid}>{MICROWAVE_CATALOG.map(item => <CatalogCard key={item.id} item={item} onPress={() => addMicrowave(item.id)}/>)}</View>
     <Text style={styles.category}>Refrigerators</Text>
     <View style={styles.grid}>{REFRIGERATOR_CATALOG.map(item => <CatalogCard key={item.id} item={item} onPress={() => addRefrigerator(item.id as RefrigeratorModelId)}/>)}</View>
   </ScrollView>;
@@ -143,6 +176,21 @@ const styles = StyleSheet.create({
   fridgeDrawer: { height: '24%', borderWidth: 1, borderColor: '#788082', backgroundColor: '#D6DBDC66' },
   fridgeHandleLeft: { position: 'absolute', top: '20%', left: '41%', width: 2, height: '38%', backgroundColor: '#5C6466' },
   fridgeHandleRight: { position: 'absolute', top: '20%', right: '41%', width: 2, height: '38%', backgroundColor: '#5C6466' },
+  microwaveThumb: { width: '82%', minHeight: '62%', borderRadius: 5, borderWidth: 1, borderColor: '#697274', padding: 4, justifyContent: 'center' },
+  microwaveTopVent: { height: 7, backgroundColor: '#181C1D', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginBottom: 2 },
+  microwaveVentSlat: { width: 5, height: 2, backgroundColor: '#737B7D' },
+  microwaveFront: { height: 50, flexDirection: 'row', position: 'relative' },
+  microwaveDoor: { flex: 1, backgroundColor: '#111416', borderWidth: 2, borderColor: '#343A3C', padding: 6 },
+  microwaveMesh: { flex: 1, backgroundColor: '#3A4143', opacity: .78 },
+  microwaveHandle: { position: 'absolute', right: 20, top: 5, width: 4, height: 40, borderRadius: 3, backgroundColor: '#D7DCDE', zIndex: 2 },
+  microwavePanel: { width: 18, backgroundColor: '#101415', padding: 2, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'flex-start', gap: 1 },
+  microwaveDisplay: { width: 14, height: 5, backgroundColor: '#8ED7E8', marginBottom: 2 },
+  microwaveKey: { width: 3, height: 3, borderRadius: 1, backgroundColor: '#737B7D' },
+  microwaveUnderside: { height: 8, backgroundColor: '#282E2F', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
+  microwaveFilter: { width: '37%', height: 4, backgroundColor: '#596264' },
+  microwaveLight: { width: 10, height: 4, backgroundColor: '#F7E7B0' },
+  microwaveFeet: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 6 },
+  microwaveFoot: { width: 9, height: 3, backgroundColor: '#303638' },
   finishPanel: { marginTop: 8, marginBottom: 14, borderRadius: 12, borderWidth: 1, borderColor: '#BFCBC7', backgroundColor: '#F7FAF9', padding: 10 },
   finishHeadingRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
   finishTitle: { fontSize: 13, fontWeight: '900', color: '#1D2A27', textTransform: 'uppercase' },

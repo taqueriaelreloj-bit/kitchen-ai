@@ -1,0 +1,42 @@
+{
+  "collection": "Kitchen AI Microwave Collection",
+  "validatedAt": "2026-08-29",
+  "status": "passed",
+  "checks": {
+    "gltf20": true,
+    "embeddedBuffers": true,
+    "meters": true,
+    "yUp": true,
+    "floorCenterOrigin": true,
+    "uniqueModelIds": true,
+    "realWorldDimensions": true,
+    "pbrMaterial": true,
+    "vertexColors": true,
+    "catalogThumbnails": true,
+    "countertopElevationIn": 36,
+    "overRangeElevationIn": 54,
+    "extractorGeometry": true,
+    "normals": false,
+    "viewerComputesNormals": true
+  },
+  "models": {
+    "microwave-countertop-24-stainless": {
+      "vertices": 184,
+      "triangles": 276,
+      "dimensionsIn": [
+        24,
+        14,
+        18
+      ]
+    },
+    "microwave-over-range-30-stainless": {
+      "vertices": 296,
+      "triangles": 444,
+      "dimensionsIn": [
+        30,
+        16.5,
+        16
+      ]
+    }
+  }
+}

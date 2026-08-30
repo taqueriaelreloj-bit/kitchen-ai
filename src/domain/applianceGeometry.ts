@@ -127,10 +127,97 @@ function retroBlue(object: EditorObject): AppliancePart[] {
   ];
 }
 
+function microwaveKeypad(parts: AppliancePart[], panelX: number, front: number, topY: number) {
+  for (let row = 0; row < 4; row++) {
+    for (let column = 0; column < 3; column++) {
+      parts.push(part(
+        `microwave-key-${row}-${column}`,
+        panelX - 1.25 + column * 1.25,
+        topY - row * 1.45,
+        front - .27,
+        .72,
+        .52,
+        .12,
+        '#737B7D',
+        .34,
+        .66,
+      ));
+    }
+  }
+}
+
+function countertopMicrowave(object: EditorObject): AppliancePart[] {
+  const front = frontOf(object, .18);
+  const panelWidth = Math.max(4.6, object.widthIn * .215);
+  const doorWidth = Math.max(12, object.widthIn - panelWidth - 1.65);
+  const doorX = -object.widthIn / 2 + .55 + doorWidth / 2;
+  const panelX = object.widthIn / 2 - panelWidth / 2 - .55;
+  const doorHeight = Math.max(8, object.heightIn - 2.1);
+  const parts: AppliancePart[] = [
+    part('microwave-front-frame', 0, 0, front, object.widthIn - .35, object.heightIn - .35, .34, object.color ?? '#AEB5B8', .3, .92),
+    part('microwave-door-glass', doorX, 0, front - .28, doorWidth, doorHeight, .28, '#111416', .08, .34),
+    part('microwave-door-mesh', doorX, 0, front - .47, Math.max(8, doorWidth - 2.1), Math.max(5, doorHeight - 2.2), .12, '#34393B', .48, .44),
+    part('microwave-control-panel', panelX, 0, front - .29, panelWidth, doorHeight, .29, '#101415', .12, .30),
+    part('microwave-display', panelX, object.heightIn * .28, front - .49, panelWidth * .64, 1.15, .12, '#8ED7E8', .05, .04),
+    part('microwave-handle', doorX + doorWidth / 2 - .68, 0, front - .88, .78, doorHeight - 1.0, .82, '#D7DCDE', .18, .96),
+    part('microwave-lower-trim', 0, -object.heightIn / 2 + .58, front - .40, object.widthIn - 1.0, .68, .28, '#D7DCDE', .22, .92),
+  ];
+  microwaveKeypad(parts, panelX, front, object.heightIn * .12);
+  parts.push(
+    part('microwave-stop', panelX - .95, -object.heightIn * .31, front - .50, 1.55, .62, .12, '#A63A3A', .24, .15),
+    part('microwave-start', panelX + .95, -object.heightIn * .31, front - .50, 1.55, .62, .12, '#3D8C64', .24, .15),
+  );
+  return parts;
+}
+
+function overRangeMicrowave(object: EditorObject): AppliancePart[] {
+  const front = frontOf(object, .18);
+  const panelWidth = Math.max(5.2, object.widthIn * .18);
+  const doorWidth = Math.max(18, object.widthIn - panelWidth - 1.75);
+  const doorX = -object.widthIn / 2 + .58 + doorWidth / 2;
+  const panelX = object.widthIn / 2 - panelWidth / 2 - .58;
+  const doorHeight = Math.max(9, object.heightIn - 3.1);
+  const parts: AppliancePart[] = [
+    part('microwave-front-frame', 0, 0, front, object.widthIn - .35, object.heightIn - .35, .34, object.color ?? '#AEB5B8', .3, .92),
+    part('microwave-door-glass', doorX, -.25, front - .28, doorWidth, doorHeight, .28, '#111416', .08, .34),
+    part('microwave-door-mesh', doorX, -.25, front - .47, Math.max(13, doorWidth - 2.4), Math.max(6, doorHeight - 2.4), .12, '#34393B', .48, .44),
+    part('microwave-control-panel', panelX, -.25, front - .29, panelWidth, doorHeight, .29, '#101415', .12, .30),
+    part('microwave-display', panelX, object.heightIn * .28, front - .49, panelWidth * .64, 1.15, .12, '#8ED7E8', .05, .04),
+    part('microwave-handle', doorX + doorWidth / 2 - .68, -.25, front - .9, .82, doorHeight - 1.0, .84, '#D7DCDE', .18, .96),
+    part('microwave-top-vent', 0, object.heightIn / 2 - .78, front - .30, object.widthIn - 1.0, 1.25, .25, '#111516', .5, .48),
+    part('microwave-lower-lip', 0, -object.heightIn / 2 + .58, front - .42, object.widthIn - .9, .72, .32, '#D7DCDE', .22, .92),
+    part('hood-filter-left', -object.widthIn * .235, -object.heightIn / 2 + .16, .55, object.widthIn * .40, .22, object.depthIn * .65, '#4E5759', .48, .58),
+    part('hood-filter-right', object.widthIn * .235, -object.heightIn / 2 + .16, .55, object.widthIn * .40, .22, object.depthIn * .65, '#4E5759', .48, .58),
+    part('cooktop-light', 0, -object.heightIn / 2 + .10, -object.depthIn * .33, object.widthIn * .20, .18, 2.4, '#F7E7B0', .12, .02),
+  ];
+  microwaveKeypad(parts, panelX, front, object.heightIn * .10);
+  for (let index = 0; index < 10; index++) {
+    parts.push(part(
+      `microwave-vent-slat-${index}`,
+      -object.widthIn * .42 + index * object.widthIn * .093,
+      object.heightIn / 2 - .78,
+      front - .49,
+      object.widthIn * .058,
+      .42,
+      .10,
+      '#737B7D',
+      .36,
+      .72,
+    ));
+  }
+  parts.push(
+    part('microwave-vent-button', panelX - .95, -object.heightIn * .32, front - .50, 1.65, .60, .12, '#596569', .28, .35),
+    part('microwave-light-button', panelX + .95, -object.heightIn * .32, front - .50, 1.65, .60, .12, '#7E765F', .28, .22),
+  );
+  return parts;
+}
+
 export function applianceDetailGeometry(object: EditorObject): AppliancePart[] {
   if (object.kind !== 'appliance') return [];
   const key = identity(object);
   if (object.applianceType === 'gas-range' || key.includes('gas-range') || key.includes('gas range')) return professionalGasRangeParts(object);
+  if (key.includes('microwave-over-range') || key.includes('over-the-range microwave') || key.includes('microwave + extractor') || key.includes('microondas con extractor')) return overRangeMicrowave(object);
+  if (key.includes('microwave-countertop') || key.includes('countertop microwave') || key.includes('microwave') || key.includes('microondas')) return countertopMicrowave(object);
   if (key.includes('refrigerator-panel-ready-built-in') || key.includes('panel ready') || key.includes('panel-ready')) return panelReadyBuiltIn(object);
   if (key.includes('refrigerator-smart-black') || key.includes('smart refrigerator') || key.includes('black glass')) return smartBlack(object);
   if (key.includes('refrigerator-retro-blue') || key.includes('retro') || key.includes('pastel blue')) return retroBlue(object);

@@ -6,14 +6,20 @@ import {
   createCatalogGasRange,
   createCatalogRefrigerator,
 } from './applianceCatalog';
+import {
+  MICROWAVE_CATALOG,
+  MicrowaveModelId,
+  createCatalogMicrowave,
+} from './microwaveCatalog';
 import { EditorObject, EditorProject, ObjectKind, objectDefaults } from './editor';
 import { OBJECT_SNAP_IN } from './objectMovement';
 import { PLAN_DISPLAY_SCALE, projectPlanBounds } from './viewFitting';
 
 export const KITCHEN_CATALOG_DRAG_MIME = 'application/x-kitchen-ai-catalog-item';
 
-export type DragCatalogCategoryId = 'lowers' | 'uppers' | 'tall' | 'refrigerators' | 'gas-ranges';
+export type DragCatalogCategoryId = 'lowers' | 'uppers' | 'tall' | 'refrigerators' | 'gas-ranges' | 'microwaves';
 export type DragCatalogItemKind = 'cabinet' | 'appliance';
+export type DragApplianceModelId = ApplianceModelId | MicrowaveModelId;
 
 export type DragCatalogItem = {
   id: string;
@@ -27,7 +33,7 @@ export type DragCatalogItem = {
   heightIn: number;
   depthIn: number;
   previewColor: string;
-  applianceModelId?: ApplianceModelId;
+  applianceModelId?: DragApplianceModelId;
 };
 
 export type DragCatalogCategory = {
@@ -101,9 +107,13 @@ const TALL_ITEMS: DragCatalogItem[] = [
   cabinetItem('tall-fridge-surround-36x84', 'tall', 'refrigerator-cabinet', '36 in Refrigerator Cabinet', 'Fridge Surround', 36, 84, 24, 'Full-height refrigerator surround'),
 ];
 
-const APPLIANCE_ITEMS: DragCatalogItem[] = APPLIANCE_CATALOG.map(item => ({
+const APPLIANCE_ITEMS: DragCatalogItem[] = [...APPLIANCE_CATALOG, ...MICROWAVE_CATALOG].map(item => ({
   id: item.id,
-  categoryId: item.category === 'refrigerator' ? 'refrigerators' : 'gas-ranges',
+  categoryId: item.category === 'refrigerator'
+    ? 'refrigerators'
+    : item.category === 'microwave'
+      ? 'microwaves'
+      : 'gas-ranges',
   kind: 'appliance',
   objectKind: 'appliance',
   name: item.name,
@@ -131,6 +141,7 @@ export const DRAG_CATALOG_CATEGORIES: DragCatalogCategory[] = [
   { id: 'tall', label: 'Tall', helper: 'Pantry, utility and appliance towers', icon: '▯', items: itemsFor('tall') },
   { id: 'refrigerators', label: 'Refrigerators', helper: 'Professional refrigerator models', icon: '▧', items: itemsFor('refrigerators') },
   { id: 'gas-ranges', label: 'Gas Ranges', helper: 'Professional gas range models', icon: '▦', items: itemsFor('gas-ranges') },
+  { id: 'microwaves', label: 'Microwaves', helper: 'Countertop and over-the-range models', icon: '▭', items: itemsFor('microwaves') },
 ];
 
 export function dragCatalogItemById(id?: string) {
@@ -141,9 +152,14 @@ export function createDragCatalogObject(itemId: string, partial: Partial<EditorO
   const item = dragCatalogItemById(itemId);
   if (!item) return undefined;
   if (item.kind === 'appliance') {
-    const object = item.categoryId === 'refrigerators'
-      ? createCatalogRefrigerator(item.applianceModelId as RefrigeratorModelId)
-      : createCatalogGasRange(item.applianceModelId as GasRangeModelId);
+    let object: EditorObject;
+    if (item.categoryId === 'refrigerators') {
+      object = createCatalogRefrigerator(item.applianceModelId as RefrigeratorModelId);
+    } else if (item.categoryId === 'microwaves') {
+      object = createCatalogMicrowave(item.applianceModelId as MicrowaveModelId);
+    } else {
+      object = createCatalogGasRange(item.applianceModelId as GasRangeModelId);
+    }
     return { ...object, ...partial };
   }
   return objectDefaults(item.objectKind, {
