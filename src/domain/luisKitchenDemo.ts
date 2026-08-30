@@ -1,8 +1,9 @@
 import { createCatalogGasRange, createCatalogRefrigerator } from './applianceCatalog';
 import { CountertopSpec, DEFAULT_COUNTERTOP, DEFAULT_ISLAND, IslandSpec, createIsland } from './countertops';
 import { DEFAULT_TOE_KICK, EditorObject, EditorProject, createEditorProject, objectDefaults } from './editor';
+import { professionalCameraForView } from './professional3d';
 import { KitchenDesign, RoomModel } from './types';
-import { fit3DCamera } from './viewFitting';
+import { fit2DView } from './viewFitting';
 
 const WHITE_CABINET = '#F4F1E8';
 const STAINLESS = '#AEB3B7';
@@ -65,22 +66,28 @@ const wallCabinet = (
   toeKick: undefined,
 });
 
+/**
+ * A deliberately simple 10 × 11 ft sample. Everything on the main run totals
+ * exactly 120 inches and the compact island keeps at least a 36 inch aisle.
+ * This sample is intended to teach the editor, not to demonstrate every catalog
+ * object at once.
+ */
 export function createLuisTenByElevenKitchen(): EditorProject {
   const room: RoomModel = {
-    id: 'luis-room-10x11',
+    id: 'clean-room-10x11',
     widthM: 3.048,
     lengthM: 3.3528,
     heightM: 2.4384,
-    layout: 'L',
+    layout: 'single-wall',
     openings: [],
     confidence: 1,
-    source: 'guided-camera',
+    source: 'manual',
     photos: [],
   };
   const design: KitchenDesign = {
-    id: 'luis-design-10x11',
-    name: '10 × 11 Kitchen with Sink Island',
-    description: 'Ten-foot top wall, eleven-foot left wall, centered range, refrigerator at the far right, sink island, pantry, wall oven and microwave tower.',
+    id: 'clean-design-10x11',
+    name: 'Clean 10 × 11 Starter Kitchen',
+    description: 'A balanced 10-foot appliance wall with a compact preparation island and clear circulation.',
     style: 'modern',
     cabinetColor: 'white',
     countertop: 'quartz',
@@ -88,116 +95,79 @@ export function createLuisTenByElevenKitchen(): EditorProject {
     includesIsland: true,
   };
 
-  const topWall = objectDefaults('wall', {
-    id: 'wall-top-10ft',
-    name: 'Top Wall – 10 ft',
+  const northWall = objectDefaults('wall', {
+    id: 'wall-north-10ft',
+    name: 'North Wall – 10 ft',
     x: 120,
-    y: 80,
+    y: 120,
     widthIn: 120,
     heightIn: 96,
     rotation: 0,
   });
-  // The left wall starts at the lower-left corner and runs upward. This keeps
-  // its interior-facing normal pointed into the room for tall-cabinet placement.
-  const leftWall = objectDefaults('wall', {
-    id: 'wall-left-11ft',
-    name: 'Left Wall – 11 ft',
+  const westWall = objectDefaults('wall', {
+    id: 'wall-west-11ft',
+    name: 'West Wall – 11 ft',
     x: 120,
-    y: 212,
+    y: 252,
     widthIn: 132,
     heightIn: 96,
     rotation: -90,
   });
+  // Main run: 18 + 32 + 34 + 36 = 120 inches.
+  const prepBase = placeOnWall(baseCabinet('clean-prep-base-18', '18 in Prep Base', 18), northWall, 0);
+  const prepUpper = placeOnWall(wallCabinet('clean-prep-upper-18', '18 in Wall Cabinet', 18), northWall, 0);
 
-  const ovenTower = placeOnWall(objectDefaults('oven-cabinet', {
-    id: 'left-oven-tower',
-    name: 'Wall Oven + Microwave Tower',
-    widthIn: 30,
-    depthIn: 24,
-    heightIn: 84,
-    color: WHITE_CABINET,
-    finishId: 'pure-white',
-    material: 'Oven tower',
-    toeKick: { ...DEFAULT_TOE_KICK, color: WHITE_CABINET },
-  }), leftWall, 102);
-
-  const pantry = placeOnWall(objectDefaults('pantry-cabinet', {
-    id: 'left-pantry-30',
-    name: '30 in Pantry Cabinet',
-    widthIn: 30,
-    depthIn: 24,
-    heightIn: 84,
-    color: WHITE_CABINET,
-    finishId: 'pure-white',
-    toeKick: { ...DEFAULT_TOE_KICK, color: WHITE_CABINET },
-  }), leftWall, 72);
-
-  const microwave = placeOnWall(objectDefaults('appliance', {
-    id: 'built-in-microwave',
-    name: 'Built-In Microwave',
-    widthIn: 24,
-    depthIn: 2,
-    heightIn: 15,
-    elevationIn: 56,
-    color: STAINLESS,
-    material: 'Brushed Stainless Steel',
-    applianceType: 'generic',
-  }), leftWall, 105, 24.4);
-
-  // The first 30 inches of the top wall remain open for the oven tower return.
-  const base12 = placeOnWall(baseCabinet('top-base-12', '12 in Base Cabinet', 12), topWall, 30);
-  const upper12 = placeOnWall(wallCabinet('top-upper-12', '12 in Upper Cabinet', 12), topWall, 30);
-
-  const range = placeOnWall(createCatalogGasRange('gas-range-36-4-burner-griddle', {
+  const range = placeOnWall(createCatalogGasRange('gas-range-32-4-burner', {
     id: 'range-centered',
-    name: '36 in Gas Range – Centered',
+    name: '32 in Gas Range',
     dimensionsLocked: true,
-  }), topWall, 42);
-
+  }), northWall, 18);
   const hood = placeOnWall(objectDefaults('appliance', {
-    id: 'range-hood-36',
-    name: '36 in Range Hood',
-    widthIn: 36,
+    id: 'clean-range-hood-32',
+    name: '32 in Range Hood',
+    widthIn: 32,
     depthIn: 20,
     heightIn: 18,
     elevationIn: 66,
     color: STAINLESS,
     material: 'Brushed Stainless Steel',
     applianceType: 'generic',
-  }), topWall, 42);
+  }), northWall, 18);
 
-  const spicePullout = placeOnWall(objectDefaults('drawer-base', {
-    id: 'top-spice-6',
-    name: '6 in Spice Pull-Out',
-    widthIn: 6,
+  const drawerBase = placeOnWall(objectDefaults('drawer-base', {
+    id: 'clean-drawer-base-34',
+    name: '34 in Drawer Base',
+    widthIn: 34,
     color: WHITE_CABINET,
     finishId: 'pure-white',
     toeKick: { ...DEFAULT_TOE_KICK, color: WHITE_CABINET },
-  }), topWall, 78);
-  const upper6 = placeOnWall(wallCabinet('top-upper-6', '6 in Upper Filler Cabinet', 6), topWall, 78);
+  }), northWall, 50);
+  const drawerUpper = placeOnWall(wallCabinet('clean-drawer-upper-34', '34 in Wall Cabinet', 34), northWall, 50);
 
   const refrigerator = placeOnWall(createCatalogRefrigerator('refrigerator-french-door-stainless', {
     id: 'refrigerator-far-right',
-    name: '36 in Refrigerator – Far Right',
+    name: '36 in French Door Refrigerator',
     dimensionsLocked: true,
-  }), topWall, 84);
+  }), northWall, 84);
   const refrigeratorBridge = placeOnWall(wallCabinet(
-    'refrigerator-bridge',
-    '36 in Refrigerator Bridge Cabinet',
+    'clean-refrigerator-bridge',
+    '36 in Refrigerator Bridge',
     36,
     14,
     24,
     70,
-  ), topWall, 84);
+  ), northWall, 84);
 
+  // 36 inches between the cabinet fronts and the island, with more than
+  // 45 inches behind the island in an 11-foot-deep room.
   const sinkIsland = {
     ...createIsland({
       id: 'sink-island',
-      name: '36 in Sink Island – Facing Range',
-      x: 162,
-      y: 146,
-      widthIn: 36,
-      depthIn: 30,
+      name: '42 × 24 in Sink Island',
+      x: 159,
+      y: 188.25,
+      widthIn: 42,
+      depthIn: 24,
       heightIn: 36,
       color: WHITE_CABINET,
       finishId: 'pure-white',
@@ -206,7 +176,7 @@ export function createLuisTenByElevenKitchen(): EditorProject {
     countertopSpec: {
       ...DEFAULT_COUNTERTOP,
       materialId: 'quartz-calacatta',
-      overhangFrontIn: 1.5,
+      overhangFrontIn: 1,
       overhangSideIn: 1,
       sinkCutout: true,
     },
@@ -220,32 +190,27 @@ export function createLuisTenByElevenKitchen(): EditorProject {
     },
   } as IslandObject;
 
-  const project = createEditorProject(room, design, 'Luis – 10 × 11 Kitchen');
-  project.objects = [
-    topWall,
-    leftWall,
-    ovenTower,
-    pantry,
-    microwave,
-    base12,
-    upper12,
-    range,
-    hood,
-    spicePullout,
-    upper6,
-    refrigerator,
-    refrigeratorBridge,
-    sinkIsland,
-  ];
-  project.selectedId = sinkIsland.id;
-  project.viewMode = '3d';
-  project.camera3d = {
-    ...project.camera3d,
-    yaw: -42,
-    pitch: 31,
-    target: { x: 180, y: 138 },
+  let project = createEditorProject(room, design, 'Cocina de ejemplo limpia — 10 × 11');
+  project = {
+    ...project,
+    objects: [
+      northWall,
+      westWall,
+      prepBase,
+      prepUpper,
+      range,
+      hood,
+      drawerBase,
+      drawerUpper,
+      refrigerator,
+      refrigeratorBridge,
+      sinkIsland,
+    ],
+    selectedId: undefined,
+    viewMode: '3d',
+    updatedAt: new Date().toISOString(),
   };
-  project.camera3d = fit3DCamera(project);
-  project.updatedAt = new Date().toISOString();
+  project.view2d = fit2DView(project, { width: 1080, height: 700 });
+  project.camera3d = professionalCameraForView(project, 'dollhouse', { width: 1080, height: 700 });
   return project;
 }
