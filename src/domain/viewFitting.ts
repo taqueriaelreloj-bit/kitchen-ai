@@ -68,7 +68,9 @@ export function fit2DView(project: EditorProject, viewportValue: ViewportSize, p
   const bounds = projectDisplayBounds(project);
   const availableWidth = Math.max(40, viewport.width - padding * 2);
   const availableHeight = Math.max(40, viewport.height - padding * 2);
-  const zoom = clampZoom(Math.min(availableWidth / bounds.width, availableHeight / bounds.height));
+  const rawZoom = Math.min(availableWidth / bounds.width, availableHeight / bounds.height);
+  // Fit must never round upward or the plan can spill past the requested padding.
+  const zoom = clampZoom(Math.floor(rawZoom * 100) / 100);
   return {
     ...project.view2d,
     zoom,

@@ -14,7 +14,7 @@ export type LayoutIssue={
 };
 
 const inches=(meters:number)=>meters*39.3701;
-const isFloorBlocker=(object:EditorObject)=>!isLighting(object)&&(isBaseLikeKind(object.kind)||object.kind==='appliance');
+const isFloorBlocker=(object:EditorObject)=>!isLighting(object)&&(isBaseLikeKind(object.kind)||(object.kind==='appliance'&&(object.elevationIn??0)<16));
 const overlapArea=(a:ReturnType<typeof objectFootprint>,b:ReturnType<typeof objectFootprint>)=>Math.max(0,Math.min(a.right,b.right)-Math.max(a.left,b.left))*Math.max(0,Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top));
 const label=(object:EditorObject)=>object.name||object.kind;
 
