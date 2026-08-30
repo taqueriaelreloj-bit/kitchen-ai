@@ -496,7 +496,9 @@ def build_cabinet(kind, root, col, m, w, d, h):
     elif kind == "tall":
         for frac in (.18, .36, .54, .72):
             add_shelf(root, col, m, w, d, bottom + (h - bottom) * frac)
-        split_z = s(65.5)
+        # Kitchen AI catalog style: equal-height upper and lower pantry doors.
+        # This intentionally differs from utility lines that use a short top door.
+        split_z = (bottom + h) / 2
         add_frame_rail(root, col, m, w, d, split_z, "PantrySeparationRail")
         count = 1 if w <= s(18) else 2
         add_door_pair(root, col, m, w, d, bottom + edge, split_z - center_gap / 2,
