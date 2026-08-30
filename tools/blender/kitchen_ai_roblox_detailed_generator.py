@@ -127,11 +127,18 @@ def make_mat(name, color, metallic=0.0, roughness=0.45, alpha=1.0, emission=None
         bsdf.inputs["Metallic"].default_value = metallic
         bsdf.inputs["Roughness"].default_value = roughness
         bsdf.inputs["Alpha"].default_value = alpha
+        if alpha < 1.0:
+            if "Transmission Weight" in bsdf.inputs:
+                bsdf.inputs["Transmission Weight"].default_value = .18
+            if "Coat Weight" in bsdf.inputs:
+                bsdf.inputs["Coat Weight"].default_value = .22
         if emission and "Emission Color" in bsdf.inputs:
             eh = emission.lstrip('#')
             ergb = tuple(int(eh[i:i+2], 16) / 255 for i in (0, 2, 4)) + (1,)
             bsdf.inputs["Emission Color"].default_value = ergb
             bsdf.inputs["Emission Strength"].default_value = 2.0
+    if alpha < 1.0 and hasattr(mat, "surface_render_method"):
+        mat.surface_render_method = 'DITHERED'
     return mat
 
 
@@ -243,10 +250,11 @@ def add_frame_rail(root, col, m, w, d, z, name="FaceFrame_MidRail"):
 
 
 def add_shaker_panel(root, col, m, name, x, y, z, width, height,
-                     panel_mat=None, glass=False, bevel=.008):
+                     panel_mat=None, glass=False, bevel=.008, frame_in=None):
     """Build a true five-piece Shaker front rather than a beveled slab."""
     thickness = s(DOOR_IN)
-    frame = min(s(DOOR_FRAME_WIDTH_IN), width * .22, height * .22)
+    requested_frame = s(DOOR_FRAME_WIDTH_IN if frame_in is None else frame_in)
+    frame = min(requested_frame, width * .205, height * .205)
     panel_t = s(DOOR_PANEL_IN)
     inner_w = max(s(.5), width - 2 * frame)
     inner_h = max(s(.5), height - 2 * frame)
@@ -304,11 +312,16 @@ def cabinet_shell(root, col, m, w, d, h, toe=False):
         box("FrontStretcher", (w - 2 * side, s(3), shelf), (0, -d / 2 + s(1.5), h - shelf / 2), m["wood"], col, root)
         box("RearStretcher", (w - 2 * side, s(3), shelf), (0, d / 2 - back - s(1.5), h - shelf / 2), m["wood"], col, root)
     box("Back_1quarter", (w - 2 * side, back, body_h), (0, d / 2 - back / 2, toe_h + body_h / 2), m["edge"], col, root, .004)
+    finish_t = s(.125)
+    for x, label in ((-w / 2 + finish_t / 2, "LeftFinishedEnd"),
+                     (w / 2 - finish_t / 2, "RightFinishedEnd")):
+        box(label, (finish_t, d, body_h), (x, 0, toe_h + body_h / 2),
+            m["cab"], col, root, .003)
     if toe:
-        box("ToeKickSkin", (w, s(.25), toe_h), (0, -d / 2 + toe_recess, toe_h / 2), m["cab"], col, root, .004)
-        for x in (-w / 2 + side / 2, w / 2 - side / 2):
-            box("ToeKickSide", (side, toe_recess, toe_h),
-                (x, -d / 2 + toe_recess / 2, toe_h / 2), m["wood"], col, root, .004)
+        box("ToeKickSkin", (w - s(.25), s(.25), toe_h),
+            (0, -d / 2 + toe_recess, toe_h / 2), m["cab"], col, root, .004)
+        box("ToeKickRearCleat", (w - 2 * side, s(.75), toe_h),
+            (0, d / 2 - s(.5), toe_h / 2), m["wood"], col, root, .004)
         box("ToeFloor", (w - 2 * side, d - toe_recess, s(.5)), (0, toe_recess / 2, s(.25)), m["wood"], col, root, .004)
 
 
@@ -362,8 +375,9 @@ def add_drawer_box(root, col, m, w, d, z, face_h, index):
     for x in (-box_w / 2 - slide_t / 2, box_w / 2 + slide_t / 2):
         box(f"Drawer{index}_Slide", (slide_t, box_d, slide_h), (x, y, z - box_h * .25), m["steel"], col, root, .003)
     face_y = -d / 2 - s(FACE_FRAME_IN) - front_t / 2
+    drawer_frame_in = min(1.75, max(.75, face_h * IN_PER_STUD * .19))
     add_shaker_panel(root, col, m, f"Drawer{index}_Face", 0, face_y, z,
-                     w - s(3.25), face_h)
+                     w - s(3.25), face_h, frame_in=drawer_frame_in)
     add_handle(root, col, m, 0, face_y - s(.35), z + face_h * .15, min(8.0, max(4.0, w * 12 * .35)), False)
 
 
@@ -653,23 +667,46 @@ def add_showroom(roots, m):
     bpy.context.scene.collection.children.link(col)
     columns = 6
     rows = math.ceil(len(roots) / columns)
-    box("Floor", (columns * 5 + 3, rows * 5 + 3, .12), ((columns - 1) * 2.5, (rows - 1) * 2.5, -.06), m["floor"], col, None, .02)
-    for i, (root, elev) in enumerate(roots):
-        root.location = (i % columns * 5, i // columns * 5, s(elev))
-    bpy.ops.object.camera_add(location=(13, -22, 18))
+    x_step = 5.2
+    y_step = 6.2
+    width = (columns - 1) * x_step + 7
+    depth = (rows - 1) * y_step + 8
+    box("Floor", (width, depth, .12),
+        ((columns - 1) * x_step / 2, (rows - 1) * y_step / 2, -.06),
+        m["floor"], col, None, .02)
+    for i, (root, elev, category) in enumerate(roots):
+        # Catalog display position: uppers are lowered enough to inspect while
+        # their true installation elevation remains stored in root metadata.
+        display_z = s(18) if category == "uppers" else 0
+        if category == "microwaves":
+            display_z = s(30)
+        root.location = (i % columns * x_step, i // columns * y_step, display_z)
+        if category in {"lowers", "tall"}:
+            box(f"Plinth_{i+1}", (4.3, 4.6, s(.75)),
+                (root.location.x, root.location.y, -s(.375)), m["edge"], col, None, .006)
+    center_x = (columns - 1) * x_step / 2
+    center_y = (rows - 1) * y_step / 2
+    bpy.ops.object.camera_add(location=(center_x, -34, 31))
     cam = bpy.context.object
     move_to(cam, col)
     bpy.context.scene.camera = cam
-    target = (12.5, (rows - 1) * 2.5, 2.6)
+    target = (center_x, center_y + 2, 2.6)
     cam.rotation_euler = Vector((target[0]-cam.location.x, target[1]-cam.location.y, target[2]-cam.location.z)).to_track_quat('-Z', 'Y').to_euler()
-    cam.data.lens = 46
-    for loc, energy, size in [((3, -5, 17), 2200, 8), ((25, 8, 15), 1600, 10), ((8, 32, 17), 1800, 9)]:
+    cam.data.lens = 54
+    for loc, energy, size in [((2, -8, 22), 2600, 10), ((25, 10, 24), 2200, 12), ((8, 38, 25), 2400, 12)]:
         bpy.ops.object.light_add(type='AREA', location=loc)
         light = bpy.context.object
         move_to(light, col)
         light.data.energy = energy
         light.data.size = size
         light.rotation_euler = Vector((target[0]-loc[0], target[1]-loc[1], target[2]-loc[2])).to_track_quat('-Z', 'Y').to_euler()
+    scene = bpy.context.scene
+    scene.render.resolution_x = 1920
+    scene.render.resolution_y = 1080
+    scene.render.resolution_percentage = 100
+    scene.render.image_settings.file_format = 'PNG'
+    scene.render.film_transparent = False
+    scene.world.color = (.035, .035, .035)
 
 
 def main():
@@ -686,7 +723,7 @@ def main():
         col, root = root_for(model_id, category, w, d, h, elev)
         build(entry, root, col, m)
         glb = export_glb(root, model_id) if EXPORT_GLB else None
-        roots.append((root, elev))
+        roots.append((root, elev, category))
         manifest.append({
             "id": model_id,
             "category": category,
