@@ -92,15 +92,37 @@ CATALOG = [
     ("tall-oven-30x84", "tall", "oven-tower", 30, 24, 84, 0),
     # 36-inch appliance opening plus two panels and installation clearance.
     ("tall-fridge-surround-36x84", "tall", "fridge-surround", 39, 24, 84, 0),
-    ("refrigerator-french-door-stainless", "refrigerators", "fridge-french", 36, 30, 70, 0),
+    ("refrigerator-french-door-stainless", "refrigerators", "fridge-french", 35.75, 36.875, 70.25, 0),
     ("refrigerator-panel-ready-built-in", "refrigerators", "fridge-panel", 36, 24, 84, 0),
-    ("refrigerator-smart-black", "refrigerators", "fridge-smart", 36, 30, 70, 0),
-    ("refrigerator-retro-blue", "refrigerators", "fridge-retro", 24, 26, 63, 0),
-    ("gas-range-32-4-burner", "gas-ranges", "range", 32, 28, 36, 0),
-    ("gas-range-36-4-burner-griddle", "gas-ranges", "range-griddle", 36, 28, 36, 0),
-    ("gas-range-42-4-burner-griddle", "gas-ranges", "range-griddle", 42, 28, 36, 0),
-    ("microwave-countertop-24-stainless", "microwaves", "microwave", 24, 18, 14, 36),
+    ("refrigerator-smart-black", "refrigerators", "fridge-smart", 35.75, 34.25, 70, 0),
+    ("refrigerator-single-door-stainless", "refrigerators", "fridge-single", 29.75, 31.5, 72, 0),
+    ("refrigerator-retro-blue", "refrigerators", "fridge-retro", 23.6875, 28.75, 60.25, 0),
+    ("gas-range-30-4-burner", "gas-ranges", "range-30", 29.875, 28.375, 37, 0),
+    ("gas-range-36-4-burner-griddle", "gas-ranges", "range-36-griddle", 35.875, 28.375, 37, 0),
+    ("gas-range-48-6-burner-griddle", "gas-ranges", "range-48-griddle", 47.875, 28.375, 37, 0),
+    ("gas-cooktop-30-5-burner", "cooktops", "cooktop-gas-30", 31, 21.25, 3.8125, 36),
+    ("gas-cooktop-36-5-burner", "cooktops", "cooktop-gas-36", 37, 21.25, 3.8125, 36),
+    ("induction-cooktop-30-4-zone", "cooktops", "cooktop-induction-30", 31, 21.25, 4, 36),
+    ("electric-cooktop-36-5-radiant", "cooktops", "cooktop-electric-36", 37, 21.25, 4, 36),
+    ("hood-under-cabinet-30", "hoods", "hood-undercab-30", 30, 20, 5.5, 66),
+    ("hood-wall-chimney-36", "hoods", "hood-chimney-36", 36, 19.6875, 38.875, 66),
+    ("hood-professional-wall-48", "hoods", "hood-pro-48", 48, 24, 18, 66),
+    ("microwave-countertop-24-stainless", "microwaves", "microwave", 23.875, 19.4375, 14, 36),
     ("microwave-over-range-30-stainless", "microwaves", "microwave-otr", 30, 15.875, 16.4375, 54),
+    ("microwave-drawer-24-stainless", "microwaves", "microwave-drawer", 23.625, 21.875, 16, 24),
+    ("dishwasher-24-stainless", "dishwashers", "dishwasher-standard", 23.875, 24.5, 33.875, 0),
+    ("dishwasher-24-panel-ready", "dishwashers", "dishwasher-panel", 23.5625, 23.25, 33.875, 0),
+    ("dishwasher-18-compact", "dishwashers", "dishwasher-compact", 17.625, 22.5, 32.5, 0),
+    ("sink-undermount-30-single", "sinks", "sink-undermount", 30, 18, 9, 36),
+    ("sink-farmhouse-33-apron", "sinks", "sink-farmhouse", 33.6875, 18.25, 9.5625, 36),
+    ("sink-undermount-36-double", "sinks", "sink-double", 35.75, 20, 9, 36),
+    ("faucet-professional-pulldown", "faucets", "faucet-pro", 5, 9.4375, 21.375, 36),
+    ("faucet-standard-pulldown", "faucets", "faucet-standard", 4, 8.9375, 16.0625, 36),
+    ("faucet-wall-pot-filler", "faucets", "faucet-pot-filler", 24, 4, 12, 54),
+    ("sink-garbage-disposal", "sink-accessories", "sink-accessory-disposal", 8.5, 8.5, 12.75, 24),
+    ("sink-basket-strainer", "sink-accessories", "sink-accessory-strainer", 4.5, 4.5, 3.25, 36),
+    ("sink-soap-dispenser", "sink-accessories", "sink-accessory-soap", 2.5, 4, 13, 36),
+    ("dishwasher-air-gap", "sink-accessories", "sink-accessory-airgap", 2, 2, 2.5, 36),
 ]
 
 
@@ -128,6 +150,9 @@ def make_mat(name, color, metallic=0.0, roughness=0.45, alpha=1.0, emission=None
         bsdf.inputs["Metallic"].default_value = metallic
         bsdf.inputs["Roughness"].default_value = roughness
         bsdf.inputs["Alpha"].default_value = alpha
+        if metallic > .5 and "Coat Weight" in bsdf.inputs:
+            bsdf.inputs["Coat Weight"].default_value = .32
+            bsdf.inputs["Coat Roughness"].default_value = .16
         if alpha < 1.0:
             if "Transmission Weight" in bsdf.inputs:
                 bsdf.inputs["Transmission Weight"].default_value = .18
@@ -139,7 +164,7 @@ def make_mat(name, color, metallic=0.0, roughness=0.45, alpha=1.0, emission=None
             bsdf.inputs["Emission Color"].default_value = ergb
             bsdf.inputs["Emission Strength"].default_value = 2.0
     if alpha < 1.0 and hasattr(mat, "surface_render_method"):
-        mat.surface_render_method = 'DITHERED'
+        mat.surface_render_method = 'BLENDED'
     return mat
 
 
@@ -150,17 +175,21 @@ def materials():
         "wood": make_mat("Birch Plywood", "#C2915F", 0.0, .55),
         "drawer": make_mat("Maple Drawer Box", "#D6AA76", 0.0, .48),
         "glass": make_mat("Cabinet Glass", "#A8D0DB", .05, .10, .30),
-        "steel": make_mat("Brushed Stainless", "#AEB6B8", .90, .26),
-        "dark": make_mat("Dark Metal", "#252A2B", .65, .26),
-        "black": make_mat("Black Glass", "#101315", .18, .08),
-        "blue": make_mat("Retro Blue", "#9FCBE4", .04, .28),
-        "screen": make_mat("Display", "#58CEE9", .04, .08, 1, "#58CEE9"),
+        "oven_glass": make_mat("Transparent Oven Glass", "#708892", .08, .035, .035),
+        "steel": make_mat("Brushed Stainless", "#D2D8D9", .88, .20),
+        "dark": make_mat("Graphite Metal", "#444D52", .62, .20),
+        "black": make_mat("Black Glass", "#17222A", .18, .07),
+        "blue": make_mat("Retro Azure Blue", "#72C7EE", .08, .20),
+        "screen": make_mat("Display", "#67E1FF", .04, .06, 1, "#67E1FF"),
         "brass": make_mat("Burner Brass", "#B78A43", .85, .30),
+        "red": make_mat("Professional Red Knob", "#A71920", .30, .20),
+        "heat": make_mat("Radiant Heating Element", "#FF572F", .10, .12, 1, "#FF572F"),
         "rubber": make_mat("Rubber", "#17191A", .0, .82),
         "white": make_mat("Appliance Interior", "#EDEDEA", .02, .36),
         "light": make_mat("Warm Light", "#F7E6B0", 0, .15, 1, "#F7E6B0"),
-        "floor": make_mat("Showroom Floor", "#CBD3D1", 0, .76),
-        "chrome": make_mat("Polished Chrome", "#DDE4E6", .96, .12),
+        "floor": make_mat("Showroom Floor", "#E2E8E6", 0, .62),
+        "chrome": make_mat("Polished Chrome", "#F1F6F7", .96, .08),
+        "rack": make_mat("Illuminated Oven Rack", "#E8F0F2", .72, .12, 1, "#52666C"),
         "aluminum": make_mat("Extruded Aluminum", "#889397", .82, .32),
         "porcelain": make_mat("Porcelain Enamel", "#17191C", .22, .18),
         "gasket": make_mat("Door Gasket", "#232526", 0, .90),
@@ -539,119 +568,859 @@ def add_leveling_feet(root, col, m, w, d):
             cylinder("LevelingFoot", s(.35), s(.65), (x, y, s(.325)), m["rubber"], col, root, vertices=16)
 
 
+def add_kitchen_ai_badge(root, col, m, x, y, z, width_in=5.0, dark=False, height_in=.92):
+    """Mesh logo that survives individual GLB export without external fonts."""
+    badge_w = s(width_in)
+    badge_h = s(height_in)
+    badge = box("KitchenAI_LogoBadge", (badge_w, s(.10), badge_h),
+                (x, y, z), m["black"] if dark else m["chrome"], col, root, .01)
+    badge["Brand"] = "KITCHEN AI"
+    bpy.ops.object.text_add(location=(x, y - s(.075), z), rotation=(math.pi / 2, 0, 0))
+    text_obj = bpy.context.object
+    text_obj.name = "KitchenAI_LogoText"
+    text_obj.data.body = "KITCHEN AI"
+    text_obj.data.align_x = 'CENTER'
+    text_obj.data.align_y = 'CENTER'
+    text_obj.data.size = s(max(.58, width_in * .14))
+    text_obj.data.extrude = s(.018)
+    text_obj.data.bevel_depth = s(.008)
+    text_obj.data.materials.append(m["chrome"] if dark else m["black"])
+    move_to(text_obj, col)
+    text_obj.parent = root
+    bpy.context.view_layer.objects.active = text_obj
+    text_obj.select_set(True)
+    bpy.ops.object.convert(target='MESH')
+    text_obj.select_set(False)
+
+
+def add_screen_text(root, col, mat, body, x, y, z, size_in=.7):
+    """Convert appliance UI text to mesh so it remains visible in Roblox GLB."""
+    bpy.ops.object.text_add(location=(x, y, z), rotation=(math.pi / 2, 0, 0))
+    obj = bpy.context.object
+    obj.name = "SmartPanelText_" + body.replace(" ", "_").replace("°", "deg")
+    obj.data.body = body
+    obj.data.align_x = 'CENTER'
+    obj.data.align_y = 'CENTER'
+    obj.data.size = s(size_in)
+    obj.data.extrude = s(.012)
+    obj.data.bevel_depth = s(.004)
+    obj.data.materials.append(mat)
+    move_to(obj, col)
+    obj.parent = root
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
+    bpy.ops.object.convert(target='MESH')
+    obj.select_set(False)
+    return obj
+
+
+def frustum(name, bottom_size, top_size, height, loc, mat, col, parent=None, bevel=.02):
+    """Closed rectangular frustum for a clean, truly sloped hood canopy."""
+    bw, bd = bottom_size[0] / 2, bottom_size[1] / 2
+    tw, td = top_size[0] / 2, top_size[1] / 2
+    z0, z1 = -height / 2, height / 2
+    verts = [(-bw, -bd, z0), (bw, -bd, z0), (bw, bd, z0), (-bw, bd, z0),
+             (-tw, -td, z1), (tw, -td, z1), (tw, td, z1), (-tw, td, z1)]
+    faces = [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4),
+             (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
+    mesh = bpy.data.meshes.new(name + "Mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    obj.location = loc
+    col.objects.link(obj)
+    if parent:
+        obj.parent = parent
+    obj.data.materials.append(mat)
+    if bevel:
+        mod = obj.modifiers.new("SoftEdges", 'BEVEL')
+        mod.width = bevel
+        mod.segments = 2
+    return obj
+
+
+def tube_path(name, points, radius, mat, col, parent=None):
+    curve = bpy.data.curves.new(name + "Curve", 'CURVE')
+    curve.dimensions = '3D'
+    curve.bevel_depth = radius
+    curve.bevel_resolution = 3
+    spline = curve.splines.new('BEZIER')
+    spline.bezier_points.add(len(points) - 1)
+    for bp, point in zip(spline.bezier_points, points):
+        bp.co = point
+        bp.handle_left_type = 'AUTO'
+        bp.handle_right_type = 'AUTO'
+    obj = bpy.data.objects.new(name, curve)
+    col.objects.link(obj)
+    obj.data.materials.append(mat)
+    if parent:
+        obj.parent = parent
+    return obj
+
+
+def add_top_text(root, col, mat, body, x, y, z, size_in=.7):
+    """Horizontal mesh lettering for cooktops and other countertop appliances."""
+    bpy.ops.object.text_add(location=(x, y, z))
+    obj = bpy.context.object
+    obj.name = "CooktopBrand_" + body.replace(" ", "_")
+    obj.data.body = body
+    obj.data.align_x = 'CENTER'
+    obj.data.align_y = 'CENTER'
+    obj.data.size = s(size_in)
+    obj.data.extrude = s(.012)
+    obj.data.bevel_depth = s(.004)
+    obj.data.materials.append(mat)
+    move_to(obj, col)
+    obj.parent = root
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
+    bpy.ops.object.convert(target='MESH')
+    obj.select_set(False)
+    return obj
+
+
+def add_appliance_pull(root, col, m, x, y, z, length_in, vertical=True, finish=None):
+    """Commercial appliance pull with round grip and two projected standoffs."""
+    finish = finish or m["steel"]
+    radius = s(.32)
+    length = s(length_in)
+    if vertical:
+        cylinder("AppliancePull", radius, length, (x, y, z), finish, col, root, vertices=32)
+        for zz in (z - length * .38, z + length * .38):
+            cylinder("PullStandoff", radius * .72, s(1.05), (x, y + s(.52), zz),
+                     finish, col, root, rot=(math.pi / 2, 0, 0), vertices=24)
+    else:
+        cylinder("AppliancePull", radius, length, (x, y, z), finish, col, root,
+                 rot=(0, math.pi / 2, 0), vertices=32)
+        for xx in (x - length * .38, x + length * .38):
+            cylinder("PullStandoff", radius * .72, s(1.05), (xx, y + s(.52), z),
+                     finish, col, root, rot=(math.pi / 2, 0, 0), vertices=24)
+
+
+def add_fridge_vent(root, col, m, w, y, z, count=12, span_in=3.0):
+    slot_w = max(s(.35), (w - s(4)) / count * .58)
+    start = -(count - 1) * (w - s(4)) / count / 2
+    step = (w - s(4)) / count
+    for i in range(count):
+        box(f"VentSlot_{i+1}", (slot_w, s(.10), s(span_in)),
+            (start + i * step, y, z), m["black"], col, root, .002)
+
+
 def build_fridge(kind, root, col, m, w, d, h):
-    steel = m["blue"] if kind == "fridge-retro" else m["dark"] if kind == "fridge-smart" else m["steel"]
-    wall = s(.75)
-    back = s(.5)
-    interior_w = w - 2 * wall
-    interior_d = d - s(3)
-    body_bottom = s(.75)
-    body_h = h - body_bottom
-    box("LeftCabinetWall", (wall, d, body_h), (-w / 2 + wall / 2, 0, body_bottom + body_h / 2), steel, col, root)
-    box("RightCabinetWall", (wall, d, body_h), (w / 2 - wall / 2, 0, body_bottom + body_h / 2), steel, col, root)
-    box("TopCabinetWall", (interior_w, d, wall), (0, 0, h - wall / 2), steel, col, root)
-    box("BackCabinetWall", (interior_w, back, body_h), (0, d / 2 - back / 2, body_bottom + body_h / 2), steel, col, root)
-    box("InteriorLiner", (interior_w, interior_d, body_h - s(1.5)), (0, s(.3), body_bottom + body_h / 2), m["white"], col, root, .008)
-    box("CompressorCover", (interior_w * .70, s(2.0), s(7.0)),
-        (0, d / 2 - s(1.25), s(4.0)), m["dark"], col, root, .012)
-    for i in range(9):
-        box(f"LowerVent_{i+1}", (interior_w * .70, s(.18), s(.16)),
-            (0, -d / 2 - s(.08), s(.7 + i * .32)), m["dark"], col, root, .001)
+    root["Brand"] = "KITCHEN AI"
+    root["Construction"] = "model-specific refrigerator; standard North American appliance dimensions"
+    exterior = m["blue"] if kind == "fridge-retro" else m["dark"] if kind == "fridge-smart" else m["steel"]
+    front = -d / 2
+    shell_bottom = s(.75)
+    shell_h = h - shell_bottom
+    # Complete insulated cabinet, rear condenser panel and serviceable compressor zone.
+    box("InsulatedCabinet", (w - s(.6), d - s(1.1), shell_h),
+        (0, s(.25), shell_bottom + shell_h / 2), exterior, col, root, .045)
+    box("RearCondenserPanel", (w - s(2), s(.45), h - s(5)),
+        (0, d / 2 - s(.3), h / 2 + s(1)), m["dark"], col, root, .008)
+    box("CompressorServiceCover", (w * .72, s(.55), s(7.5)),
+        (0, d / 2 - s(.62), s(4.5)), m["dark"], col, root, .015)
     add_leveling_feet(root, col, m, w, d)
 
-    y = -d / 2 - s(.45)
     if kind == "fridge-retro":
-        lower_h = h * .67
-        upper_h = h - lower_h - s(.5)
-        box("FreshFoodDoor", (w - s(.4), s(1.1), lower_h), (0, y, lower_h / 2 + s(.4)), steel, col, root, .025)
-        box("FreezerDoor", (w - s(.4), s(1.1), upper_h), (0, y, lower_h + upper_h / 2), steel, col, root, .025)
-        box("FreshFoodGasket", (w - s(1.1), s(.16), lower_h - s(.8)), (0, y + s(.58), lower_h / 2 + s(.4)), m["gasket"], col, root, .004)
-        box("FreezerGasket", (w - s(1.1), s(.16), upper_h - s(.8)), (0, y + s(.58), lower_h + upper_h / 2), m["gasket"], col, root, .004)
-        add_handle(root, col, m, -w * .28, y - s(.7), lower_h * .58, 8, False)
-        add_handle(root, col, m, -w * .28, y - s(.7), lower_h + upper_h * .55, 7, False)
-        for z in (lower_h * .20, lower_h * .42, lower_h * .64):
-            box("GlassShelf", (interior_w - s(1), interior_d - s(2), s(.22)), (0, s(.4), z), m["glass"], col, root, .003)
-    else:
-        freezer_h = h * .27
-        fresh_bottom = freezer_h + s(.5)
-        fresh_h = h - fresh_bottom - s(.5)
-        for i, x in enumerate((-w / 4, w / 4)):
-            box(f"FrenchDoor_{i+1}", (w / 2 - s(.22), s(1.0), fresh_h), (x, y, fresh_bottom + fresh_h / 2), steel, col, root, .022)
-            box(f"FrenchDoorGasket_{i+1}", (w / 2 - s(.82), s(.14), fresh_h - s(.7)),
-                (x, y + s(.53), fresh_bottom + fresh_h / 2), m["gasket"], col, root, .003)
-            add_handle(root, col, m, x + (s(2.2) if i == 0 else -s(2.2)), y - s(.65), fresh_bottom + fresh_h * .55, 18, True)
-            for z in (fresh_bottom + fresh_h * .18, fresh_bottom + fresh_h * .82):
-                add_hinge(root, col, m, x + (-w * .22 if i == 0 else w * .22), y + s(.4), z, -1 if i == 0 else 1)
-        box("FreezerDrawerFace", (w - s(.5), s(1.0), freezer_h - s(.4)), (0, y, freezer_h / 2), steel, col, root, .022)
-        box("FreezerBasket", (interior_w - s(1.2), interior_d - s(4), freezer_h * .48),
-            (0, s(.35), freezer_h * .42), m["aluminum"], col, root, .006)
-        add_handle(root, col, m, 0, y - s(.65), freezer_h * .72, min(24, w * 12 - 8), False)
-        for z in (fresh_bottom + fresh_h * .22, fresh_bottom + fresh_h * .45, fresh_bottom + fresh_h * .68):
-            box("GlassShelf", (interior_w - s(1), interior_d - s(2), s(.22)), (0, s(.4), z), m["glass"], col, root, .003)
-        box("CrisperLeft", (interior_w * .46, interior_d * .72, s(7)), (-interior_w * .25, s(.5), fresh_bottom + s(4.5)), m["glass"], col, root, .006)
-        box("CrisperRight", (interior_w * .46, interior_d * .72, s(7)), (interior_w * .25, s(.5), fresh_bottom + s(4.5)), m["glass"], col, root, .006)
-        for i, x in enumerate((-w * .25, w * .25), 1):
-            for frac in (.30, .55, .78):
-                box(f"DoorBin_{i}_{int(frac*100)}", (w * .19, s(3.0), s(4.0)),
-                    (x, -d / 2 + s(2.0), fresh_bottom + fresh_h * frac), m["glass"], col, root, .004)
-        if kind == "fridge-smart":
-            box("SmartDisplay", (w * .22, s(.18), h * .23), (w * .23, y - s(.62), h * .58), m["screen"], col, root, .006)
-        elif kind == "fridge-french":
-            box("IceWaterDispenser", (w * .19, s(.18), h * .16), (-w * .23, y - s(.62), h * .57), m["black"], col, root, .006)
+        # FAB28-class compact: one rounded refrigerator door with internal freezer.
+        door_y = front - s(.72)
+        box("SingleRoundedDoor", (w - s(.55), s(1.35), h - s(1.35)),
+            (0, door_y, h / 2 + s(.1)), exterior, col, root, .10)
+        box("PerimeterDoorGasket", (w - s(1.25), s(.16), h - s(2.2)),
+            (0, door_y + s(.72), h / 2 + s(.1)), m["gasket"], col, root, .012)
+        box("TopCrown", (w - s(.8), s(1.45), s(1.1)),
+            (0, door_y + s(.05), h - s(.7)), exterior, col, root, .08)
+        add_appliance_pull(root, col, m, -w * .22, door_y - s(.9), h * .72, 11, False, m["chrome"])
+        cylinder("UpperHingeCap", s(.45), s(.35), (w * .43, door_y - s(.35), h - s(.8)),
+                 m["chrome"], col, root, rot=(math.pi / 2, 0, 0), vertices=28)
+        add_kitchen_ai_badge(root, col, m, w * .16, door_y - s(.72), h * .84, 5.6, False)
+        add_fridge_vent(root, col, m, w * .62, front - s(.05), s(1.5), 8, .55)
+        return
+
+    if kind == "fridge-single":
+        # Full-height 30-inch single-door refrigerator with an internal freezer.
+        # The exterior remains one uninterrupted door, unlike a top-freezer unit.
+        door_y = front - s(.62)
+        door_h = h - s(1.25)
+        box("FullHeightSingleDoor", (w - s(.55), s(1.18), door_h),
+            (0, door_y, s(.55) + door_h / 2), exterior, col, root, .05)
+        box("SingleDoorPerimeterGasket", (w - s(1.2), s(.15), door_h - s(.75)),
+            (0, door_y + s(.63), s(.55) + door_h / 2), m["gasket"], col, root, .012)
+        # Professional vertical pull, hinge caps, upper status display and intake grille.
+        add_appliance_pull(root, col, m, -w * .37, door_y - s(.82), h * .53, 26, True, m["steel"])
+        for z, label in ((s(1.15), "LowerHingeCap"), (h - s(.7), "UpperHingeCap")):
+            box(label, (s(2.2), s(.72), s(.55)),
+                (w * .40, door_y + s(.10), z), m["dark"], col, root, .012)
+        box("TemperatureStatusDisplay", (s(4.5), s(.14), s(1.25)),
+            (w * .18, door_y - s(.64), h * .79), m["black"], col, root, .012)
+        box("TemperatureReadout", (s(1.5), s(.04), s(.45)),
+            (w * .18, door_y - s(.74), h * .79), m["screen"], col, root, .004)
+        add_fridge_vent(root, col, m, w * .68, front - s(.04), s(1.35), 10, .6)
+        add_kitchen_ai_badge(root, col, m, w * .18, door_y - s(.68), h * .88, 5.4, True)
+        root["InteriorConfiguration"] = "single fresh-food door with internal freezer compartment"
+        return
+
+    if kind == "fridge-panel":
+        # Flush 36 x 84 built-in with a top compressor grille and applied cabinetry panels.
+        grille_h = s(5)
+        freezer_h = s(20)
+        reveal = s(.20)
+        door_y = front - s(.62)
+        box("TopCompressorGrille", (w - s(.5), s(1.0), grille_h),
+            (0, door_y, h - grille_h / 2 - s(.25)), m["dark"], col, root, .012)
+        add_fridge_vent(root, col, m, w - s(1.2), door_y - s(.53), h - grille_h / 2 - s(.25), 14, 2.6)
+        fresh_bottom = freezer_h + reveal
+        fresh_top = h - grille_h - reveal
+        fresh_h = fresh_top - fresh_bottom
+        each_w = (w - s(.65) - reveal) / 2
+        for i, x in enumerate((-(each_w + reveal) / 2, (each_w + reveal) / 2), 1):
+            add_shaker_panel(root, col, m, f"PanelReadyFreshDoor_{i}", x, door_y,
+                             fresh_bottom + fresh_h / 2, each_w, fresh_h, bevel=.012)
+            pull_x = x + (each_w * .38 if i == 1 else -each_w * .38)
+            add_appliance_pull(root, col, m, pull_x, door_y - s(.72), fresh_bottom + fresh_h * .49, 24, True, m["steel"])
+        drawer_h = (freezer_h - reveal * 2) / 2
+        for i in range(2):
+            z = reveal + drawer_h / 2 + i * (drawer_h + reveal)
+            add_shaker_panel(root, col, m, f"PanelReadyFreezerDrawer_{i+1}", 0, door_y,
+                             z, w - s(.65), drawer_h, bevel=.012, frame_in=1.75)
+            add_appliance_pull(root, col, m, 0, door_y - s(.72), z + drawer_h * .22, 26, False, m["steel"])
+        add_kitchen_ai_badge(root, col, m, 0, door_y - s(.58), h - grille_h / 2 - s(.25), 5.5, True)
+        return
+
+    # Freestanding French-door and smart four-door models.
+    door_y = front - s(.60)
+    reveal = s(.18)
+    if kind == "fridge-smart":
+        lower_h = s(24)
+        upper_bottom = lower_h + reveal
+        upper_h = h - upper_bottom - s(.55)
+        each_w = (w - s(.55) - reveal) / 2
+        for row, bottom, face_h in (("Upper", upper_bottom, upper_h), ("Flex", s(.55), lower_h - s(.55))):
+            for i, x in enumerate((-(each_w + reveal) / 2, (each_w + reveal) / 2), 1):
+                box(f"Smart{row}Door_{i}", (each_w, s(1.12), face_h),
+                    (x, door_y, bottom + face_h / 2), exterior, col, root, .045)
+        # 21.5-inch Family-Hub-class panel with a complete layered smart-home UI.
+        screen_x = each_w * .53
+        screen_z = upper_bottom + upper_h * .52
+        box("SmartDisplayOuterBezel", (s(12.0), s(.22), s(24.0)),
+            (screen_x, door_y - s(.66), screen_z), m["black"], col, root, .025)
+        ui_y = door_y - s(.80)
+        box("SmartDisplayActiveGlass", (s(10.9), s(.055), s(22.7)),
+            (screen_x, ui_y, screen_z), m["dark"], col, root, .018)
+        # Header: live clock, wireless indicator and Kitchen AI identity.
+        box("StatusBar", (s(10.25), s(.035), s(1.35)),
+            (screen_x, ui_y - s(.045), screen_z + s(10.25)), m["black"], col, root, .006)
+        add_screen_text(root, col, m["white"], "10:24", screen_x - s(3.3), ui_y - s(.09), screen_z + s(10.25), .58)
+        add_screen_text(root, col, m["screen"], "KITCHEN AI", screen_x, ui_y - s(.09), screen_z + s(10.25), .47)
+        for i, hh in enumerate((.35, .55, .75)):
+            box(f"WifiBar_{i+1}", (s(.22), s(.035), s(hh)),
+                (screen_x + s(3.45 + i * .34), ui_y - s(.09), screen_z + s(10.15)), m["white"], col, root, .003)
+        # Weather card with icon and readable current temperature.
+        box("WeatherCard", (s(4.85), s(.04), s(5.0)),
+            (screen_x - s(2.65), ui_y - s(.07), screen_z + s(6.7)), m["blue"], col, root, .016)
+        cylinder("WeatherSun", s(.62), s(.04),
+                 (screen_x - s(3.55), ui_y - s(.12), screen_z + s(7.65)), m["light"], col, root,
+                 rot=(math.pi / 2, 0, 0), vertices=28)
+        add_screen_text(root, col, m["white"], "72°", screen_x - s(2.25), ui_y - s(.13), screen_z + s(7.7), 1.15)
+        add_screen_text(root, col, m["white"], "SUNNY", screen_x - s(2.65), ui_y - s(.13), screen_z + s(5.75), .43)
+        # Refrigerator controls card.
+        box("CoolingControlCard", (s(4.85), s(.04), s(5.0)),
+            (screen_x + s(2.65), ui_y - s(.07), screen_z + s(6.7)), m["black"], col, root, .016)
+        add_screen_text(root, col, m["screen"], "FRIDGE 37°", screen_x + s(2.65), ui_y - s(.13), screen_z + s(7.7), .57)
+        add_screen_text(root, col, m["white"], "FREEZER 0°", screen_x + s(2.65), ui_y - s(.13), screen_z + s(6.55), .52)
+        box("CoolingModeToggle", (s(3.25), s(.035), s(.70)),
+            (screen_x + s(2.65), ui_y - s(.13), screen_z + s(5.45)), m["screen"], col, root, .12)
+        cylinder("CoolingModeKnob", s(.27), s(.04),
+                 (screen_x + s(3.65), ui_y - s(.17), screen_z + s(5.45)), m["white"], col, root,
+                 rot=(math.pi / 2, 0, 0), vertices=24)
+        # Calendar and family reminder card.
+        box("FamilyCalendarCard", (s(10.25), s(.04), s(5.15)),
+            (screen_x, ui_y - s(.07), screen_z + s(.95)), m["black"], col, root, .016)
+        add_screen_text(root, col, m["screen"], "TODAY", screen_x - s(3.85), ui_y - s(.13), screen_z + s(2.55), .50)
+        add_screen_text(root, col, m["white"], "6:00  DINNER", screen_x - s(1.85), ui_y - s(.13), screen_z + s(1.25), .48)
+        add_screen_text(root, col, m["white"], "MILK  •  FRUIT  •  EGGS", screen_x, ui_y - s(.13), screen_z - s(.15), .40)
+        box("CalendarAccent", (s(.32), s(.035), s(3.65)),
+            (screen_x - s(4.75), ui_y - s(.13), screen_z + s(.85)), m["screen"], col, root, .04)
+        # Four quick-action controls and lower navigation dock.
+        for i, (label, dx) in enumerate((("ICE", -3.75), ("WATER", -1.25), ("VIEW", 1.25), ("HOME", 3.75)), 1):
+            box(f"QuickAction_{i}", (s(2.15), s(.04), s(2.65)),
+                (screen_x + s(dx), ui_y - s(.07), screen_z - s(3.65)), m["blue"] if i == 3 else m["black"], col, root, .018)
+            cylinder(f"QuickActionIcon_{i}", s(.38), s(.04),
+                     (screen_x + s(dx), ui_y - s(.13), screen_z - s(3.1)), m["screen"] if i != 3 else m["white"], col, root,
+                     rot=(math.pi / 2, 0, 0), vertices=24)
+            add_screen_text(root, col, m["white"], label, screen_x + s(dx), ui_y - s(.13), screen_z - s(4.25), .34)
+        box("NavigationDock", (s(10.25), s(.04), s(2.1)),
+            (screen_x, ui_y - s(.07), screen_z - s(9.25)), m["black"], col, root, .28)
+        for i, dx in enumerate((-3.6, -1.8, 0, 1.8, 3.6), 1):
+            cylinder(f"NavigationIcon_{i}", s(.27 if i != 3 else .38), s(.04),
+                     (screen_x + s(dx), ui_y - s(.13), screen_z - s(9.25)), m["screen"] if i == 3 else m["white"], col, root,
+                     rot=(math.pi / 2, 0, 0), vertices=20)
+        cylinder("SmartCamera", s(.15), s(.07), (screen_x, ui_y - s(.13), screen_z + s(11.25)),
+                 m["chrome"], col, root, rot=(math.pi / 2, 0, 0), vertices=20)
+        for x in (-s(1.05), s(1.05)):
+            box("IntegratedGrip", (s(.45), s(.28), s(17)), (x, door_y - s(.70), h * .56), m["black"], col, root, .06)
+        add_fridge_vent(root, col, m, w * .72, front - s(.04), s(1.35), 11, .6)
+        add_kitchen_ai_badge(root, col, m, -each_w * .52, door_y - s(.68), h * .88, 5.1, True)
+        return
+
+    freezer_h = s(20.5)
+    fresh_bottom = freezer_h + reveal
+    fresh_h = h - fresh_bottom - s(.55)
+    each_w = (w - s(.55) - reveal) / 2
+    for i, x in enumerate((-(each_w + reveal) / 2, (each_w + reveal) / 2), 1):
+        box(f"FrenchDoor_{i}", (each_w, s(1.12), fresh_h),
+            (x, door_y, fresh_bottom + fresh_h / 2), exterior, col, root, .045)
+        pull_x = x + (each_w * .39 if i == 1 else -each_w * .39)
+        add_appliance_pull(root, col, m, pull_x, door_y - s(.82), fresh_bottom + fresh_h * .51, 22, True, m["steel"])
+        box(f"TopHingeCap_{i}", (s(2.4), s(.8), s(.55)),
+            (x + (-each_w * .35 if i == 1 else each_w * .35), door_y + s(.15), h - s(.3)), m["dark"], col, root, .012)
+    box("FreezerDrawerFace", (w - s(.55), s(1.12), freezer_h),
+        (0, door_y, s(.55) + freezer_h / 2), exterior, col, root, .045)
+    add_appliance_pull(root, col, m, 0, door_y - s(.82), freezer_h * .70, 27, False, m["steel"])
+    # Recessed dispenser, paddle, nozzle and removable drip tray.
+    dispenser_x = -each_w * .50
+    dispenser_z = fresh_bottom + fresh_h * .50
+    box("DispenserRecess", (s(8.0), s(.40), s(12.0)),
+        (dispenser_x, door_y - s(.72), dispenser_z), m["black"], col, root, .035)
+    box("WaterPaddle", (s(3.4), s(.18), s(5.5)),
+        (dispenser_x, door_y - s(.96), dispenser_z - s(.7)), m["dark"], col, root, .015)
+    cylinder("WaterNozzle", s(.16), s(1.0),
+             (dispenser_x, door_y - s(.99), dispenser_z + s(3.8)), m["chrome"], col, root,
+             rot=(math.pi / 2, 0, 0), vertices=20)
+    box("DispenserDripTray", (s(6.4), s(.95), s(.35)),
+        (dispenser_x, door_y - s(1.0), dispenser_z - s(4.7)), m["dark"], col, root, .015)
+    add_fridge_vent(root, col, m, w * .72, front - s(.04), s(1.35), 11, .6)
+    add_kitchen_ai_badge(root, col, m, each_w * .49, door_y - s(.68), h * .88, 5.1, True)
 
 
 def add_range_grate(root, col, m, cx, cy, span_x, span_y, z):
-    rail = s(.35)
-    for off in (-span_y * .42, 0, span_y * .42):
-        box("GrateRail", (span_x, rail, rail), (cx, cy + off, z), m["dark"], col, root, .003)
-    for off in (-span_x * .42, span_x * .42):
-        box("GrateCross", (rail, span_y, rail), (cx + off, cy, z), m["dark"], col, root, .003)
+    """Heavy continuous cast-iron grate with a removable center section."""
+    rail = s(.34)
+    for off in (-span_y * .43, 0, span_y * .43):
+        box("CastIronGrateRail", (span_x, rail, rail), (cx, cy + off, z), m["dark"], col, root, .025)
+    for off in (-span_x * .44, 0, span_x * .44):
+        box("CastIronGrateCross", (rail, span_y, rail), (cx + off, cy, z), m["dark"], col, root, .025)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            box("GrateFoot", (s(.46), s(.46), s(.28)),
+                (cx + sx * span_x * .38, cy + sy * span_y * .38, z - s(.25)), m["rubber"], col, root, .018)
+
+
+def add_sealed_burner(root, col, m, x, y, z, index, large=False):
+    """Layered sealed burner with brass ports, cap, igniter and simmer ring."""
+    scale = 1.18 if large else .92
+    cylinder(f"BurnerBowl_{index}", s(2.55 * scale), s(.20), (x, y, z), m["steel"], col, root, vertices=40)
+    torus(f"BurnerPortRing_{index}", s(1.78 * scale), s(.22), (x, y, z + s(.16)), m["brass"], col, root)
+    cylinder(f"BurnerCap_{index}", s(1.42 * scale), s(.32), (x, y, z + s(.22)), m["dark"], col, root, vertices=40)
+    cylinder(f"SimmerCap_{index}", s(.58 * scale), s(.36), (x, y, z + s(.29)), m["brass"], col, root, vertices=32)
+    cylinder(f"SparkIgniter_{index}", s(.12), s(.42),
+             (x + s(2.05 * scale), y, z + s(.28)), m["white"], col, root, vertices=14)
+    for p in range(12):
+        angle = p * math.tau / 12
+        cylinder(f"FlamePort_{index}_{p+1}", s(.055), s(.10),
+                 (x + math.cos(angle) * s(1.78 * scale),
+                  y + math.sin(angle) * s(1.78 * scale), z + s(.31)),
+                 m["black"], col, root, vertices=10)
+
+
+def add_range_oven(root, col, m, x, width, d, bottom, top, door_y, label):
+    """Complete oven bay with cavity, racks, convection fan and layered glass door."""
+    cavity_h = top - bottom
+    cavity_w = width - s(2.4)
+    cavity_d = d - s(6.2)
+    cavity_y = s(.65)
+    liner_t = s(.55)
+    # Five separate porcelain panels leave the front physically open.
+    box(f"{label}_CavityBack", (cavity_w, liner_t, cavity_h),
+        (x, cavity_y + cavity_d / 2 - liner_t / 2, bottom + cavity_h / 2),
+        m["porcelain"], col, root, .018)
+    for side, suffix in ((-1, "Left"), (1, "Right")):
+        box(f"{label}_Cavity{suffix}", (liner_t, cavity_d, cavity_h),
+            (x + side * (cavity_w / 2 - liner_t / 2), cavity_y, bottom + cavity_h / 2),
+            m["porcelain"], col, root, .018)
+    box(f"{label}_CavityFloor", (cavity_w - 2 * liner_t, cavity_d, liner_t),
+        (x, cavity_y, bottom + liner_t / 2), m["porcelain"], col, root, .018)
+    box(f"{label}_CavityCeiling", (cavity_w - 2 * liner_t, cavity_d, liner_t),
+        (x, cavity_y, top - liner_t / 2), m["porcelain"], col, root, .018)
+    for n, frac in enumerate((.22, .45, .68), 1):
+        z = bottom + cavity_h * frac
+        box(f"{label}_RackFrame_{n}", (cavity_w - s(1.6), d - s(8), s(.13)),
+            (x, s(.2), z), m["rack"], col, root, .008)
+        for off in (-.40, -.30, -.20, -.10, 0, .10, .20, .30, .40):
+            box(f"{label}_RackWire_{n}", (s(.09), d - s(8.3), s(.09)),
+                (x + (cavity_w - s(2.2)) * off, s(.2), z + s(.08)), m["rack"], col, root, .004)
+        for side in (-1, 1):
+            box(f"{label}_RackGuide_{n}_{'L' if side < 0 else 'R'}",
+                (s(.24), d - s(7.4), s(.24)),
+                (x + side * (cavity_w / 2 - s(.55)), s(.1), z), m["rack"], col, root, .006)
+        box(f"{label}_RackFrontRail_{n}", (cavity_w - s(1.2), s(.34), s(.30)),
+            (x, cavity_y - cavity_d / 2 + s(.72), z + s(.10)), m["rack"], col, root, .018)
+    cylinder(f"{label}_ConvectionFan", min(cavity_w, cavity_h) * .18, s(.20),
+             (x, d / 2 - s(3.6), bottom + cavity_h * .52), m["dark"], col, root,
+             rot=(math.pi / 2, 0, 0), vertices=36)
+    for i in range(8):
+        angle = i * math.tau / 8
+        box(f"{label}_FanBlade_{i+1}", (s(.28), s(.12), s(1.45)),
+            (x + math.cos(angle) * s(.75), d / 2 - s(3.72),
+             bottom + cavity_h * .52 + math.sin(angle) * s(.75)), m["aluminum"], col, root, .012)
+    torus(f"{label}_RearHeatingElement", min(cavity_w, cavity_h) * .25, s(.12),
+          (x, d / 2 - s(3.82), bottom + cavity_h * .52), m["aluminum"], col, root,
+          rot=(math.pi / 2, 0, 0))
+    box(f"{label}_InteriorLamp", (s(1.8), s(.18), s(1.0)),
+        (x + cavity_w * .32, d / 2 - s(3.92), bottom + cavity_h * .78),
+        m["light"], col, root, .08)
+    box(f"{label}_InteriorTopLightStrip", (cavity_w - s(2.2), s(.22), s(.32)),
+        (x, cavity_y - cavity_d / 2 + s(.45), top - s(.75)), m["light"], col, root, .06)
+    face_h = cavity_h - s(.7)
+    frame_w = width - s(.45)
+    frame_rail = min(s(1.45), frame_w * .12, face_h * .16)
+    frame_z = bottom + face_h / 2
+    for side, suffix in ((-1, "Left"), (1, "Right")):
+        box(f"{label}_DoorFrame{suffix}", (frame_rail, s(1.25), face_h),
+            (x + side * (frame_w / 2 - frame_rail / 2), door_y, frame_z),
+            m["steel"], col, root, .035)
+    for side, suffix in ((-1, "Bottom"), (1, "Top")):
+        box(f"{label}_DoorFrame{suffix}", (frame_w - 2 * frame_rail, s(1.25), frame_rail),
+            (x, door_y, frame_z + side * (face_h / 2 - frame_rail / 2)),
+            m["steel"], col, root, .035)
+    visible_w = frame_w - 2 * frame_rail - s(.15)
+    visible_h = face_h - 2 * frame_rail - s(.15)
+    box(f"{label}_OuterTransparentGlass", (visible_w, s(.10), visible_h),
+        (x, door_y - s(.68), frame_z), m["oven_glass"], col, root, .012)
+    box(f"{label}_InnerTransparentGlass", (visible_w - s(.35), s(.08), visible_h - s(.35)),
+        (x, door_y - s(.48), frame_z), m["oven_glass"], col, root, .010)
+    # A thin dark ceramic border hides the glass seal without blocking the oven view.
+    border = s(.30)
+    for side in (-1, 1):
+        box(f"{label}_GlassSealVertical", (border, s(.08), visible_h),
+            (x + side * (visible_w / 2 - border / 2), door_y - s(.75), frame_z),
+            m["gasket"], col, root, .006)
+        box(f"{label}_GlassSealHorizontal", (visible_w, s(.08), border),
+            (x, door_y - s(.75), frame_z + side * (visible_h / 2 - border / 2)),
+            m["gasket"], col, root, .006)
+    add_appliance_pull(root, col, m, x, door_y - s(.98), bottom + face_h * .89,
+                       max(12, width * 12 - 5), False, m["steel"])
+    for side in (-1, 1):
+        cylinder(f"{label}_DoorHinge", s(.40), s(.85),
+                 (x + side * (width / 2 - s(1.0)), door_y + s(.34), bottom + s(.8)),
+                 m["dark"], col, root, rot=(math.pi / 2, 0, 0), vertices=20)
 
 
 def build_range(kind, root, col, m, w, d, h):
-    body_bottom = s(2)
+    root["Brand"] = "KITCHEN AI"
+    root["Construction"] = "professional sealed-burner gas range"
+    root["NominalCounterHeightIn"] = 36
+    body_bottom = s(2.25)
     add_leveling_feet(root, col, m, w, d)
-    box("RangeBody", (w, d, h - body_bottom), (0, 0, body_bottom + (h - body_bottom) / 2), m["steel"], col, root, .025)
-    box("Cooktop", (w, d * .88, s(.75)), (0, -d * .02, h + s(.375)), m["dark"], col, root, .012)
-    box("CooktopFrontTrim", (w, s(.6), s(.55)), (0, -d * .46, h + s(.25)), m["chrome"], col, root, .005)
-    griddle = "griddle" in kind
-    centers = [(-w * .28, -d * .23), (w * .28, -d * .23), (-w * .28, d * .18), (w * .28, d * .18)]
-    for i, (x, y) in enumerate(centers, 1):
-        torus(f"BurnerRing_{i}", s(2.1), s(.26), (x, y, h + s(.95)), m["dark"], col, root)
-        cylinder(f"BurnerCap_{i}", s(1.25), s(.32), (x, y, h + s(.92)), m["brass"], col, root, vertices=28)
-        cylinder(f"Igniter_{i}", s(.12), s(.38), (x + s(1.45), y, h + s(1.0)), m["white"], col, root, vertices=12)
-        add_range_grate(root, col, m, x, y, w * .32, d * .36, h + s(1.25))
-    if griddle:
-        box("CenterGriddle", (w * .22, d * .66, s(.55)), (0, -d * .02, h + s(.95)), m["dark"], col, root, .01)
-        add_handle(root, col, m, 0, -d * .36, h + s(1.35), min(10, w * 12 * .20), False)
+    box("InsulatedRangeBody", (w, d - s(.8), h - body_bottom),
+        (0, s(.25), body_bottom + (h - body_bottom) / 2), m["steel"], col, root, .04)
+    box("PorcelainCooktopWell", (w - s(.4), d - s(2.0), s(.72)),
+        (0, s(.35), h - s(.35)), m["porcelain"], col, root, .025)
+    box("FrontBullnoseTrim", (w, s(1.15), s(1.15)),
+        (0, -d / 2 - s(.20), h - s(.40)), m["steel"], col, root, .08)
+    box("RearIslandTrim", (w - s(.3), s(.72), s(2.15)),
+        (0, d / 2 - s(.3), h + s(.55)), m["steel"], col, root, .025)
+    is_36 = kind == "range-36-griddle"
+    is_48 = kind == "range-48-griddle"
+    cook_z = h + s(.18)
+    front_y, rear_y = -d * .22, d * .20
+    burner_positions = []
+    if is_48:
+        for x in (-w * .34, -w * .10, w * .14):
+            burner_positions.extend(((x, front_y), (x, rear_y)))
+        griddle_x, griddle_w = w * .375, w * .20
+    elif is_36:
+        for x in (-w * .33, w * .33):
+            burner_positions.extend(((x, front_y), (x, rear_y)))
+        griddle_x, griddle_w = 0, w * .24
+    else:
+        for x in (-w * .27, w * .27):
+            burner_positions.extend(((x, front_y), (x, rear_y)))
+        griddle_x = griddle_w = 0
+    for i, (x, y) in enumerate(burner_positions, 1):
+        add_sealed_burner(root, col, m, x, y, cook_z, i, i in {1, len(burner_positions)})
+        add_range_grate(root, col, m, x, y, s(10.5), s(9.5), cook_z + s(.75))
+    if is_36 or is_48:
+        box("InfraredGriddlePlate", (griddle_w, d * .66, s(.58)),
+            (griddle_x, -d * .01, cook_z + s(.30)), m["dark"], col, root, .06)
+        box("GriddleGreaseChannel", (griddle_w - s(1.2), s(.75), s(.25)),
+            (griddle_x, -d * .31, cook_z + s(.62)), m["black"], col, root, .06)
+        box("RemovableGreaseTray", (griddle_w * .42, s(1.25), s(.42)),
+            (griddle_x, -d * .35, cook_z + s(.35)), m["steel"], col, root, .03)
     panel_y = -d / 2 - s(.3)
-    panel_h = s(7)
-    box("ControlPanel", (w - s(.5), s(.7), panel_h), (0, panel_y, h - panel_h / 2 - s(1)), m["steel"], col, root, .01)
-    box("RangeDisplay", (s(5.5), s(.14), s(1.35)), (0, panel_y - s(.42), h - s(2.0)), m["screen"], col, root, .003)
-    knobs = 5 if griddle else 4
+    panel_h = s(7.25)
+    box("ProfessionalControlPanel", (w - s(.35), s(.82), panel_h),
+        (0, panel_y, h - panel_h / 2 - s(1.15)), m["steel"], col, root, .025)
+    knobs = len(burner_positions) + (1 if is_36 or is_48 else 0)
     for i in range(knobs):
-        x = -w * .36 + i * (w * .72 / max(1, knobs - 1))
-        cylinder(f"Knob_{i+1}", s(1.0), s(.85), (x, panel_y - s(.45), h - s(4.5)), m["dark"], col, root, rot=(math.pi / 2, 0, 0), vertices=28)
-        box(f"KnobMarker_{i+1}", (s(.12), s(.12), s(.65)), (x, panel_y - s(.92), h - s(4.1)), m["white"], col, root, .001)
-    oven_bottom = s(4)
-    oven_top = h - panel_h - s(2)
-    oven_h = oven_top - oven_bottom
-    box("OvenCavity", (w - s(4), d - s(5), oven_h), (0, s(.6), oven_bottom + oven_h / 2), m["black"], col, root, .008)
-    for n, frac in enumerate((.25, .48, .71), 1):
-        z = oven_bottom + oven_h * frac
-        box(f"OvenRack_{n}", (w - s(6), d - s(7), s(.12)), (0, s(.3), z), m["steel"], col, root, .001)
-        for off in (-.35, -.17, 0, .17, .35):
-            box(f"OvenRackWire_{n}", (s(.10), d - s(7), s(.10)), ((w - s(7)) * off, s(.3), z + s(.08)), m["steel"], col, root, .001)
+        x = -w * .40 + i * (w * .80 / max(1, knobs - 1))
+        cylinder(f"ControlBezel_{i+1}", s(1.20), s(.18),
+                 (x, panel_y - s(.48), h - s(4.65)), m["chrome"], col, root,
+                 rot=(math.pi / 2, 0, 0), vertices=36)
+        cylinder(f"RedControlKnob_{i+1}", s(.88), s(1.02),
+                 (x, panel_y - s(.82), h - s(4.65)), m["red"], col, root,
+                 rot=(math.pi / 2, 0, 0), vertices=36)
+        box(f"KnobMarker_{i+1}", (s(.13), s(.10), s(.68)),
+            (x, panel_y - s(1.36), h - s(4.25)), m["white"], col, root, .015)
+    add_kitchen_ai_badge(root, col, m, 0, panel_y - s(.50), h - s(2.0),
+                         7.2 if is_48 else 6.4, True)
+    for i in range(9):
+        box(f"ControlVent_{i+1}", (s(1.2), s(.08), s(.11)),
+            (-w * .30 + i * w * .60 / 8, panel_y - s(.48), h - s(6.7)), m["dark"], col, root, .005)
+    oven_bottom = s(4.0)
+    oven_top = h - panel_h - s(1.5)
     door_y = -d / 2 - s(.72)
-    box("OvenDoorFrame", (w - s(1.25), s(1.2), oven_h * .84), (0, door_y, oven_bottom + oven_h * .48), m["steel"], col, root, .018)
-    box("OvenDoorGlass", (w - s(4), s(.25), oven_h * .62), (0, door_y - s(.62), oven_bottom + oven_h * .48), m["black"], col, root, .008)
-    add_handle(root, col, m, 0, door_y - s(.95), oven_bottom + oven_h * .86, min(24, w * 12 - 8), False)
+    if is_48:
+        side_gap = s(.25)
+        small_w = s(15.4)
+        main_w = w - small_w - side_gap
+        add_range_oven(root, col, m, -w / 2 + small_w / 2, small_w, d,
+                       oven_bottom, oven_top, door_y, "CompanionOven")
+        add_range_oven(root, col, m, w / 2 - main_w / 2, main_w, d,
+                       oven_bottom, oven_top, door_y, "MainOven")
+    else:
+        add_range_oven(root, col, m, 0, w - s(.65), d,
+                       oven_bottom, oven_top, door_y, "MainOven")
+    box("RemovableKickplate", (w - s(.8), s(.65), s(2.3)),
+        (0, -d / 2 - s(.12), s(1.65)), m["steel"], col, root, .025)
+    add_fridge_vent(root, col, m, w - s(2.2), -d / 2 - s(.48), s(1.65),
+                    12 if not is_48 else 18, .65)
+
+
+def build_cooktop(kind, root, col, m, w, d, h):
+    """Low-profile drop-in countertop cooktops with complete underside hardware."""
+    root["Brand"] = "KITCHEN AI"
+    root["Installation"] = "drop-in countertop cutout; nominal counter elevation 36 inches"
+    root["DefaultElevationIn"] = 36
+    induction = "induction" in kind
+    electric = "electric" in kind
+    top_z = h
+    flange_t = s(.28)
+    # The visible flange overlaps the cutout; the chassis drops below the counter.
+    box("CountertopOverlapFlange", (w, d, flange_t), (0, 0, top_z - flange_t / 2),
+        m["black"] if induction else m["steel"], col, root, .045)
+    box("UndercounterChassis", (w - s(2.0), d - s(2.0), h - flange_t),
+        (0, s(.15), (h - flange_t) / 2), m["dark"], col, root, .035)
+    box("ElectricalJunctionBox", (s(4.8), s(3.3), s(1.8)),
+        (w * .25, d * .24, s(.9)), m["dark"], col, root, .025)
     for x in (-w * .40, w * .40):
-        cylinder("DoorHinge", s(.42), s(1.0), (x, door_y + s(.4), oven_bottom + s(1)), m["steel"], col, root, rot=(math.pi / 2, 0, 0), vertices=18)
-    box("BroilerDrawerFace", (w - s(2), s(.65), s(2.4)), (0, door_y, s(2.0)), m["steel"], col, root, .008)
+        for y in (-d * .38, d * .38):
+            box("CounterMountClip", (s(1.5), s(.42), s(.65)),
+                (x, y, h - s(.55)), m["steel"], col, root, .018)
+
+    if induction or electric:
+        glass_z = top_z + s(.08)
+        box("CeramicGlassSurface", (w - s(.30), d - s(.30), s(.18)),
+            (0, 0, glass_z), m["black"], col, root, .055)
+        zones = (((-w * .25, d * .18, 4.2), (w * .25, d * .18, 3.4),
+                  (-w * .25, -d * .17, 3.3), (w * .25, -d * .17, 4.5)) if induction else
+                 ((-w * .32, d * .20, 3.5), (w * .32, d * .20, 3.0),
+                  (-w * .32, -d * .17, 3.5), (w * .32, -d * .17, 4.0),
+                  (0, d * .02, 4.6)))
+        for i, (x, y, radius_in) in enumerate(zones, 1):
+            torus(f"InductionZoneOuter_{i}", s(radius_in), s(.075),
+                  (x, y, glass_z + s(.12)), m["heat"] if electric else m["aluminum"], col, root)
+            torus(f"InductionZoneInner_{i}", s(radius_in * .72), s(.045),
+                  (x, y, glass_z + s(.13)), m["heat"] if electric else m["screen"], col, root)
+            if electric and i in {4, 5}:
+                torus(f"RadiantZoneMiddle_{i}", s(radius_in * .48), s(.055),
+                      (x, y, glass_z + s(.145)), m["heat"], col, root)
+            for tick in range(4):
+                angle = tick * math.pi / 2
+                box(f"ZoneTick_{i}_{tick+1}", (s(.10), s(.55), s(.025)),
+                    (x + math.cos(angle) * s(radius_in),
+                     y + math.sin(angle) * s(radius_in), glass_z + s(.15)),
+                    m["white"], col, root, .004)
+        box("TouchControlPanel", (s(13.5), s(2.0), s(.10)),
+            (0, -d * .38, glass_z + s(.14)), m["dark"], col, root, .025)
+        for i in range(10):
+            cylinder(f"PowerLevel_{i}", s(.16), s(.035),
+                     (-s(4.0) + i * s(.88), -d * .38, glass_z + s(.21)),
+                     m["screen"] if i < 6 else m["white"], col, root, vertices=18)
+        add_top_text(root, col, m["screen"] if induction else m["white"],
+                     "KITCHEN AI", 0, d * .42, glass_z + s(.18), .72)
+        add_top_text(root, col, m["white"], "6", s(5.0), -d * .38, glass_z + s(.18), .72)
+        if electric:
+            add_top_text(root, col, m["heat"], "HOT SURFACE", -s(5.2), -d * .38,
+                         glass_z + s(.18), .42)
+            root["Power"] = "208/240V radiant electric; five heating elements"
+        else:
+            root["Power"] = "induction; four cooking zones"
+        return
+
+    # Gas inlet, stainless spill basin, five sealed burners and continuous grates.
+    cylinder("GasInletHalfNPT", s(.34), s(1.45),
+             (-w * .30, d * .25, s(.72)), m["brass"], col, root,
+             rot=(math.pi / 2, 0, 0), vertices=24)
+    basin_z = top_z + s(.10)
+    box("SealedSpillBasin", (w - s(.35), d - s(.35), s(.20)),
+        (0, 0, basin_z), m["steel"], col, root, .04)
+    zones = ((-w * .31, d * .22), (w * .31, d * .22),
+             (-w * .31, -d * .18), (w * .31, -d * .18), (0, d * .03))
+    for i, (x, y) in enumerate(zones, 1):
+        add_sealed_burner(root, col, m, x, y, basin_z + s(.12), i, i == 5)
+    # Three removable grate modules allow pans to slide across the surface.
+    module_w = (w - s(.8)) / 3
+    for i, x in enumerate((-module_w, 0, module_w), 1):
+        add_range_grate(root, col, m, x, d * .02, module_w - s(.25), d - s(2.0), basin_z + s(.82))
+    knob_y = -d * .38
+    for i in range(5):
+        x = -s(5.1) + i * s(2.55)
+        cylinder(f"CooktopKnobBezel_{i+1}", s(.72), s(.12),
+                 (x, knob_y, basin_z + s(.34)), m["chrome"], col, root, vertices=32)
+        cylinder(f"CooktopKnob_{i+1}", s(.52), s(.68),
+                 (x, knob_y, basin_z + s(.70)), m["red"], col, root, vertices=32)
+        box(f"CooktopKnobMarker_{i+1}", (s(.10), s(.55), s(.06)),
+            (x, knob_y - s(.20), basin_z + s(1.06)), m["white"], col, root, .01)
+    add_top_text(root, col, m["black"], "KITCHEN AI", 0, -d * .46, basin_z + s(.32), .70)
+    root["Fuel"] = "natural gas / LP convertible; five sealed burners"
+
+
+def add_hood_filter(root, col, m, x, y, z, width, depth, index):
+    box(f"GreaseFilterFrame_{index}", (width, depth, s(.32)),
+        (x, y, z), m["aluminum"], col, root, .025)
+    for i in range(9):
+        xx = x - width * .40 + i * width * .10
+        box(f"FilterBaffle_{index}_{i+1}", (s(.18), depth - s(.45), s(.18)),
+            (xx, y, z - s(.20)), m["steel"], col, root, .012)
+
+
+def build_hood(kind, root, col, m, w, d, h):
+    root["Brand"] = "KITCHEN AI"
+    root["Venting"] = "ducted / recirculating convertible"
+    root["RecommendedClearance"] = "24 inches electric; 27-30 inches gas"
+    undercab = "undercab" in kind
+    chimney = "chimney" in kind
+    pro = "pro" in kind
+    canopy_h = h if undercab else s(10.75) if chimney else h
+    # Canopy shell: slim under-cabinet, stepped pyramid chimney, or deep pro box.
+    if chimney:
+        frustum("StandardPyramidCanopy", (w, d), (s(13.2), s(10.8)), canopy_h,
+                (0, 0, canopy_h / 2), m["steel"], col, root, .035)
+        box("CanopyBottomLip", (w, d, s(.55)), (0, 0, s(.275)),
+            m["steel"], col, root, .045)
+        box("CanopyTopTransition", (s(13.5), s(11.1), s(.55)),
+            (0, 0, canopy_h - s(.275)), m["steel"], col, root, .025)
+        duct_h = h - canopy_h
+        box("LowerTelescopicChimney", (s(13.2), s(10.8), duct_h * .62),
+            (0, 0, canopy_h + duct_h * .31), m["steel"], col, root, .025)
+        box("UpperTelescopicChimney", (s(12.5), s(10.1), duct_h * .58),
+            (0, 0, canopy_h + duct_h * .71), m["aluminum"], col, root, .025)
+    else:
+        box("HoodCanopyShell", (w, d, canopy_h), (0, 0, canopy_h / 2),
+            m["steel"], col, root, .06 if pro else .035)
+        if pro:
+            box("ProfessionalFrontApron", (w, s(1.1), h * .72),
+                (0, -d / 2 - s(.35), h * .55), m["steel"], col, root, .05)
+    # Underside plenum, washable baffle filters and task lights.
+    underside_z = s(.20)
+    box("BlackAirPlenum", (w - s(1.0), d - s(1.0), s(.28)),
+        (0, 0, underside_z), m["black"], col, root, .025)
+    filter_count = 4 if pro else 3 if w > s(32) else 2
+    usable_w = w - s(3.0)
+    fw = usable_w / filter_count - s(.35)
+    for i in range(filter_count):
+        x = -usable_w / 2 + fw / 2 + s(.17) + i * (fw + s(.35))
+        add_hood_filter(root, col, m, x, s(.5), underside_z - s(.12), fw, d * .56, i + 1)
+    for x in (-w * .36, w * .36):
+        cylinder("WarmTaskLight", s(1.05), s(.12),
+                 (x, -d * .34, underside_z - s(.28)), m["light"], col, root, vertices=32)
+    # Integrated centrifugal blower, damper and standard round duct collar.
+    blower_z = min(h - s(2.5), canopy_h * .58)
+    cylinder("CentrifugalBlower", min(w, d) * .18, s(3.2),
+             (0, s(.8), blower_z), m["dark"], col, root,
+             rot=(0, math.pi / 2, 0), vertices=40)
+    cylinder("RoundDuctCollar", s(4.0 if not undercab else 3.5), s(1.5),
+             (0, s(.8), h + s(.75)), m["steel"], col, root, vertices=40)
+    box("BackdraftDamper", (s(6.8), s(.24), s(1.0)),
+        (0, s(.8), h + s(.8)), m["aluminum"], col, root, .025)
+    # Front controls and prominent Kitchen AI badge.
+    front_y = -d / 2 - s(.28)
+    control_z = min(h - s(1.15), s(3.5))
+    box("TouchControlStrip", (s(12), s(.22), s(1.4)),
+        (0, front_y, control_z), m["black"], col, root, .025)
+    for i in range(6):
+        cylinder(f"HoodControl_{i+1}", s(.18), s(.08),
+                 (-s(3.1) + i * s(1.25), front_y - s(.15), control_z),
+                 m["screen"] if i in {1, 2, 3} else m["white"], col, root,
+                 rot=(math.pi / 2, 0, 0), vertices=18)
+    add_kitchen_ai_badge(root, col, m, 0, front_y - s(.10),
+                         min(h - s(1.0), control_z + s(1.45)), 7.0 if pro else 6.0, True)
+
+
+def build_dishwasher(kind, root, col, m, w, d, h):
+    root["Brand"] = "KITCHEN AI"
+    root["Installation"] = "built-in undercounter dishwasher"
+    panel_ready = kind == "dishwasher-panel"
+    compact = kind == "dishwasher-compact"
+    toe_h = s(4.0)
+    box("DishwasherChassis", (w - s(.5), d - s(.8), h - toe_h),
+        (0, s(.25), toe_h + (h - toe_h) / 2), m["dark"], col, root, .035)
+    # Stainless tub with rear, sides and floor; front remains serviceable.
+    tub_w, tub_d, tub_h = w - s(2.0), d - s(3.0), h - toe_h - s(4.0)
+    box("TubBack", (tub_w, s(.35), tub_h), (0, d / 2 - s(2.0), toe_h + tub_h / 2), m["steel"], col, root, .018)
+    for side in (-1, 1):
+        box("TubSide", (s(.35), tub_d, tub_h),
+            (side * (tub_w / 2 - s(.18)), s(.1), toe_h + tub_h / 2), m["steel"], col, root, .018)
+    box("TubFloor", (tub_w, tub_d, s(.35)), (0, s(.1), toe_h + s(.2)), m["steel"], col, root, .018)
+    # Three loading levels (two for compact), rails, tines and spray system.
+    levels = (.32, .60, .82) if not compact else (.38, .70)
+    for n, frac in enumerate(levels, 1):
+        z = toe_h + tub_h * frac
+        box(f"RackFrame_{n}", (tub_w - s(1), tub_d - s(1), s(.16)), (0, s(.05), z), m["rack"], col, root, .008)
+        for i in range(8):
+            x = -tub_w * .38 + i * tub_w * .76 / 7
+            box(f"RackTine_{n}_{i+1}", (s(.10), s(.10), s(4.2)),
+                (x, s(.1), z + s(2.0)), m["rack"], col, root, .01)
+    cylinder("SumpFilter", s(2.0), s(.45), (0, s(.2), toe_h + s(.5)), m["dark"], col, root, vertices=36)
+    for n, z in enumerate((toe_h + s(1.2), toe_h + tub_h * .50), 1):
+        box(f"SprayArm_{n}", (tub_w * .72, s(.55), s(.20)), (0, s(.1), z), m["aluminum"], col, root, .08)
+        cylinder(f"SprayHub_{n}", s(.48), s(.28), (0, s(.1), z), m["dark"], col, root, vertices=24)
+    face_y = -d / 2 - s(.62)
+    door_h = h - toe_h - s(.35)
+    if panel_ready:
+        add_shaker_panel(root, col, m, "PanelReadyDishwasherDoor", 0, face_y,
+                         toe_h + door_h / 2, w - s(.35), door_h, bevel=.012)
+        add_appliance_pull(root, col, m, 0, face_y - s(.75), h - s(3.5), 18, False, m["steel"])
+    else:
+        box("StainlessDishwasherDoor", (w - s(.35), s(1.15), door_h),
+            (0, face_y, toe_h + door_h / 2), m["steel"], col, root, .045)
+        add_appliance_pull(root, col, m, 0, face_y - s(.78), h - s(3.2), 16 if compact else 20, False, m["steel"])
+    box("TopControlStrip", (w - s(.8), s(.18), s(1.5)),
+        (0, face_y - s(.62), h - s(1.1)), m["black"], col, root, .018)
+    for i in range(6):
+        cylinder(f"DishwasherControl_{i+1}", s(.16), s(.06),
+                 (-w * .25 + i * w * .10, face_y - s(.74), h - s(1.1)),
+                 m["screen"] if i == 4 else m["white"], col, root,
+                 rot=(math.pi / 2, 0, 0), vertices=16)
+    add_kitchen_ai_badge(root, col, m, 0, face_y - s(.70), toe_h + s(2.0),
+                         8.0 if not compact else 6.5, True, 1.35)
+    box("AdjustableToeKick", (w - s(.6), s(.75), toe_h),
+        (0, -d / 2 + s(2.0), toe_h / 2), m["dark"], col, root, .025)
+    add_leveling_feet(root, col, m, w, d)
+
+
+def build_sink(kind, root, col, m, w, d, h):
+    root["Brand"] = "KITCHEN AI"
+    mat = m["white"] if kind == "sink-farmhouse" else m["steel"]
+    rim = s(.55)
+    wall = s(.55)
+    divider = s(1.0) if kind == "sink-double" else 0
+    # Open-top bowl with sloped-looking stepped walls and real drain hardware.
+    box("SinkBottom", (w - 2 * wall, d - 2 * wall, wall), (0, 0, wall / 2), mat, col, root, .10)
+    for side in (-1, 1):
+        box("SinkSideWall", (wall, d, h), (side * (w / 2 - wall / 2), 0, h / 2), mat, col, root, .12)
+        box("SinkFrontBackWall", (w - 2 * wall, wall, h), (0, side * (d / 2 - wall / 2), h / 2), mat, col, root, .12)
+    box("SinkRimFront", (w, rim, rim), (0, -d / 2, h), mat, col, root, .08)
+    box("SinkRimBack", (w, rim, rim), (0, d / 2, h), mat, col, root, .08)
+    for side in (-1, 1):
+        box("SinkRimSide", (rim, d, rim), (side * w / 2, 0, h), mat, col, root, .08)
+    drains = (-w * .25, w * .25) if kind == "sink-double" else (w * .22,)
+    if divider:
+        box("LowBowlDivider", (divider, d - s(1.1), h * .72), (0, 0, h * .36), mat, col, root, .08)
+    for i, x in enumerate(drains, 1):
+        cylinder(f"DrainFlange_{i}", s(1.94), s(.20), (x, 0, s(.68)), m["chrome"], col, root, vertices=40)
+        cylinder(f"DrainBasket_{i}", s(1.25), s(.28), (x, 0, s(.72)), m["dark"], col, root, vertices=32)
+    if kind == "sink-farmhouse":
+        box("ApronFront", (w, s(1.2), h + s(4.5)),
+            (0, -d / 2 - s(.35), (h + s(4.5)) / 2), mat, col, root, .14)
+        add_kitchen_ai_badge(root, col, m, 0, -d / 2 - s(1.0), h * .55, 7.5, True, 1.35)
+
+
+def build_faucet(kind, root, col, m, w, d, h):
+    root["Brand"] = "KITCHEN AI"
+    if kind == "faucet-pot-filler":
+        cylinder("WallEscutcheon", s(2.0), s(.45), (0, 0, h * .55), m["chrome"], col, root,
+                 rot=(math.pi / 2, 0, 0), vertices=36)
+        tube_path("ArticulatingPotFiller", [(0, 0, h * .55), (w * .28, 0, h * .62),
+                  (w * .48, 0, h * .78), (w * .42, -d * .25, h * .42)], s(.32), m["chrome"], col, root)
+        for x, z in ((w * .12, h * .60), (w * .38, h * .73)):
+            cylinder("ValveHandle", s(.20), s(3.2), (x, -s(.25), z), m["chrome"], col, root,
+                     rot=(0, math.pi / 2, 0), vertices=24)
+        return
+    pro = kind == "faucet-pro"
+    base_z = s(.4)
+    cylinder("FaucetEscutcheon", s(1.35), s(.35), (0, 0, s(.18)), m["chrome"], col, root, vertices=36)
+    cylinder("FaucetBody", s(.68), h * .42, (0, 0, base_z + h * .21), m["chrome"], col, root, vertices=36)
+    reach = d * .88
+    tube_path("HighArcSpout", [(0, 0, h * .38), (0, 0, h * .82),
+              (0, -reach * .55, h * .98), (0, -reach, h * .55)], s(.34 if pro else .28), m["chrome"], col, root)
+    cylinder("PullDownSprayHead", s(.52), s(4.0 if pro else 3.2),
+             (0, -reach, h * .43), m["dark"], col, root, vertices=32)
+    cylinder("SideLever", s(.18), s(4.0), (s(1.3), 0, h * .34), m["chrome"], col, root,
+             rot=(0, math.pi / 2, 0), vertices=24)
+    add_kitchen_ai_badge(root, col, m, 0, s(.55), h * .22, 4.5, True, 1.0)
+
+
+def build_sink_accessory(kind, root, col, m, w, d, h):
+    root["Brand"] = "KITCHEN AI"
+    if kind == "sink-accessory-disposal":
+        cylinder("SinkMountFlange", w * .31, s(.65), (0, 0, h - s(.33)), m["chrome"], col, root, vertices=40)
+        cylinder("QuickLockMount", w * .39, s(1.45), (0, 0, h - s(1.35)), m["aluminum"], col, root, vertices=36)
+        cylinder("GrindingChamber", w * .47, h * .52, (0, 0, h * .57), m["dark"], col, root, vertices=48)
+        cylinder("MotorHousing", w * .42, h * .33, (0, 0, h * .25), m["black"], col, root, vertices=48)
+        cylinder("DischargeElbow", s(.78), s(4.2), (w * .42, 0, h * .48), m["white"], col, root,
+                 rot=(0, math.pi / 2, 0), vertices=28)
+        cylinder("DishwasherInlet", s(.38), s(1.8), (-w * .43, 0, h * .66), m["white"], col, root,
+                 rot=(0, math.pi / 2, 0), vertices=24)
+        add_kitchen_ai_badge(root, col, m, 0, -w * .48, h * .48, 5.6, True, 1.15)
+    elif kind == "sink-accessory-strainer":
+        cylinder("StrainerFlange", w * .48, s(.22), (0, 0, h - s(.12)), m["chrome"], col, root, vertices=48)
+        cylinder("BasketCup", w * .32, h * .62, (0, 0, h * .60), m["steel"], col, root, vertices=40)
+        for i in range(16):
+            angle = i * math.tau / 16
+            cylinder(f"BasketHole_{i+1}", s(.09), s(.18),
+                     (math.cos(angle) * w * .23, math.sin(angle) * d * .23, h * .72),
+                     m["black"], col, root, vertices=10)
+        cylinder("DrainTailpiece", s(.72), h * .34, (0, 0, h * .17), m["chrome"], col, root, vertices=32)
+    elif kind == "sink-accessory-soap":
+        cylinder("SoapBottle", w * .40, h * .64, (0, 0, h * .32), m["glass"], col, root, vertices=36)
+        cylinder("PumpStem", s(.20), h * .31, (0, 0, h * .80), m["chrome"], col, root, vertices=24)
+        cylinder("CounterEscutcheon", w * .45, s(.20), (0, 0, h * .66), m["chrome"], col, root, vertices=32)
+        tube_path("SoapPumpSpout", [(0, 0, h * .90), (0, -d * .22, h * .96),
+                  (0, -d * .42, h * .90)], s(.20), m["chrome"], col, root)
+        box("PumpButton", (s(1.4), s(2.0), s(.35)), (0, -d * .08, h * .96), m["chrome"], col, root, .12)
+    else:
+        cylinder("AirGapBody", w * .34, h * .72, (0, 0, h * .36), m["dark"], col, root, vertices=32)
+        cylinder("AirGapCap", w * .49, h * .30, (0, 0, h * .84), m["chrome"], col, root, vertices=36)
+        for side in (-1, 1):
+            cylinder("AirGapHosePort", s(.28), s(1.1), (side * w * .35, 0, h * .30),
+                     m["white"], col, root, rot=(0, math.pi / 2, 0), vertices=20)
 
 
 def build_microwave(kind, root, col, m, w, d, h):
+    root["Brand"] = "KITCHEN AI"
+    root["CookingTechnology"] = "microwave inverter / sensor cooking"
+    if kind == "microwave-drawer":
+        # 24-inch built-in auto drawer: the front overlaps a narrower 21-7/8 body.
+        body_w = s(21.875)
+        face_y = -d / 2 - s(.72)
+        box("DrawerMicrowaveChassis", (body_w, d, h - s(.6)),
+            (0, 0, h / 2), m["dark"], col, root, .035)
+        box("DrawerMicrowaveCavity", (body_w - s(2.0), d - s(3.4), h - s(4.8)),
+            (0, -s(.15), h * .42), m["white"], col, root, .025)
+        box("AutoDrawerFront", (w, s(1.45), h - s(4.3)),
+            (0, face_y, (h - s(4.3)) / 2), m["steel"], col, root, .045)
+        box("DrawerWindowBlackGlass", (w - s(2.2), s(.16), h - s(7.0)),
+            (0, face_y - s(.78), h * .38), m["black"], col, root, .025)
+        box("UpperControlFascia", (w, s(1.25), s(4.0)),
+            (0, face_y, h - s(2.0)), m["black"], col, root, .035)
+        add_appliance_pull(root, col, m, 0, face_y - s(.85), h - s(5.0), 19, False, m["steel"])
+        box("DrawerDigitalDisplay", (s(5.2), s(.10), s(1.1)),
+            (-w * .21, face_y - s(.70), h - s(2.0)), m["screen"], col, root, .012)
+        add_screen_text(root, col, m["white"], "1:20", -w * .21,
+                        face_y - s(.79), h - s(2.0), .55)
+        for i, label in enumerate(("OPEN", "START", "STOP"), 1):
+            x = w * .02 + i * s(3.0)
+            cylinder(f"DrawerTouchKey_{label}", s(.34), s(.08),
+                     (x, face_y - s(.70), h - s(2.0)), m["screen"] if label == "START" else m["white"],
+                     col, root, rot=(math.pi / 2, 0, 0), vertices=20)
+        add_kitchen_ai_badge(root, col, m, 0, face_y - s(.70), s(1.85), 9.0, True, 1.5)
+        box("AntiTipBracket", (body_w - s(1.0), s(.65), s(1.8)),
+            (0, d / 2 - s(.45), h - s(1.2)), m["steel"], col, root, .018)
+        root["Installation"] = "24-inch base cabinet; anti-tip block required"
+        return
     wall = s(.55)
     box("MW_LeftWall", (wall, d, h), (-w / 2 + wall / 2, 0, h / 2), m["steel"], col, root)
     box("MW_RightWall", (wall, d, h), (w / 2 - wall / 2, 0, h / 2), m["steel"], col, root)
@@ -675,6 +1444,8 @@ def build_microwave(kind, root, col, m, w, d, h):
             x = panel_x - panel_w * .24 + c * panel_w * .24
             z = h * .62 - r * h * .085
             cylinder(f"Key_{r}_{c}", s(.22), s(.15), (x, y - s(.48), z), m["steel"], col, root, rot=(math.pi / 2, 0, 0), vertices=12)
+    add_kitchen_ai_badge(root, col, m, -panel_w / 2, y - s(.62), h * .87,
+                         9.0 if kind == "microwave" else 10.0, True, 1.5)
     cavity_w = w - panel_w - s(2.2)
     cavity_d = d - s(2.5)
     cavity_h = h - s(3)
@@ -716,6 +1487,18 @@ def build(entry, root, col, m):
         build_fridge(kind, root, col, m, w, d, h)
     elif kind.startswith("range"):
         build_range(kind, root, col, m, w, d, h)
+    elif kind.startswith("cooktop"):
+        build_cooktop(kind, root, col, m, w, d, h)
+    elif kind.startswith("hood"):
+        build_hood(kind, root, col, m, w, d, h)
+    elif kind.startswith("dishwasher"):
+        build_dishwasher(kind, root, col, m, w, d, h)
+    elif kind.startswith("sink"):
+        build_sink(kind, root, col, m, w, d, h)
+    elif kind.startswith("faucet"):
+        build_faucet(kind, root, col, m, w, d, h)
+    elif kind.startswith("sink-accessory"):
+        build_sink_accessory(kind, root, col, m, w, d, h)
     elif kind.startswith("microwave"):
         build_microwave(kind, root, col, m, w, d, h)
 
@@ -754,10 +1537,23 @@ def add_showroom(roots, m):
         display_z = s(18) if category == "uppers" else 0
         if category == "microwaves":
             display_z = s(30)
+        if category == "cooktops":
+            display_z = s(36)
+        if category == "hoods":
+            display_z = s(54)
+        if category in {"sinks", "faucets"}:
+            display_z = s(30)
+        if category == "sink-accessories":
+            display_z = s(30)
         root.location = (i % columns * x_step, i // columns * y_step, display_z)
         if category in {"lowers", "tall"}:
             box(f"Plinth_{i+1}", (4.3, 4.6, s(.75)),
                 (root.location.x, root.location.y, -s(.375)), m["edge"], col, None, .006)
+        if category == "cooktops":
+            box(f"CooktopDisplayBase_{i+1}", (4.2, 3.6, s(35.5)),
+                (root.location.x, root.location.y, s(17.75)), m["cab"], col, None, .02)
+            box(f"CooktopDisplayCounter_{i+1}", (4.6, 4.0, s(.75)),
+                (root.location.x, root.location.y, s(35.625)), m["edge"], col, None, .025)
     center_x = (columns - 1) * x_step / 2
     center_y = (rows - 1) * y_step / 2
     bpy.ops.object.camera_add(location=(center_x, -34, 31))
@@ -767,12 +1563,19 @@ def add_showroom(roots, m):
     target = (center_x, center_y + 2, 2.6)
     cam.rotation_euler = Vector((target[0]-cam.location.x, target[1]-cam.location.y, target[2]-cam.location.z)).to_track_quat('-Z', 'Y').to_euler()
     cam.data.lens = 54
-    for loc, energy, size in [((2, -8, 22), 2600, 10), ((25, 10, 24), 2200, 12), ((8, 38, 25), 2400, 12)]:
+    for index, (loc, energy, size, color) in enumerate([
+        ((2, -10, 18), 2150, 11, (1.0, .91, .78)),
+        ((25, 6, 23), 1800, 13, (.82, .91, 1.0)),
+        ((8, 34, 22), 1650, 14, (1.0, .95, .88)),
+        ((13, -4, 8), 900, 9, (.76, .88, 1.0)),
+    ]):
         bpy.ops.object.light_add(type='AREA', location=loc)
         light = bpy.context.object
+        light.name = f"ShowroomKeyLight_{index+1}"
         move_to(light, col)
         light.data.energy = energy
         light.data.size = size
+        light.data.color = color
         light.rotation_euler = Vector((target[0]-loc[0], target[1]-loc[1], target[2]-loc[2])).to_track_quat('-Z', 'Y').to_euler()
     scene = bpy.context.scene
     scene.render.resolution_x = 1920
@@ -780,7 +1583,8 @@ def add_showroom(roots, m):
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = 'PNG'
     scene.render.film_transparent = False
-    scene.world.color = (.035, .035, .035)
+    scene.world.color = (.060, .066, .072)
+    scene.view_settings.exposure = .20
 
 
 def main():
