@@ -62,9 +62,28 @@ function RangePreview({ item }: { item: DragCatalogItem }) {
   </View>;
 }
 
+function MicrowavePreview({ item }: { item: DragCatalogItem }) {
+  const overRange = item.id.includes('over-range');
+  return <View style={[styles.microwavePreview, { backgroundColor: item.previewColor }]}>
+    {overRange && <View style={styles.microwaveTopVent}>{Array.from({ length: 8 }, (_, index) => <View key={index} style={styles.microwaveVentSlat}/>)}</View>}
+    <View style={styles.microwaveFace}>
+      <View style={styles.microwaveDoor}><View style={styles.microwaveMesh}/></View>
+      <View style={styles.microwaveHandle}/>
+      <View style={styles.microwavePanel}>
+        <View style={styles.microwaveDisplay}/>
+        {Array.from({ length: 9 }, (_, index) => <View key={index} style={styles.microwaveKey}/>)}
+      </View>
+    </View>
+    {overRange
+      ? <View style={styles.microwaveUnderside}><View style={styles.microwaveFilter}/><View style={styles.microwaveLight}/><View style={styles.microwaveFilter}/></View>
+      : <View style={styles.microwaveFeet}><View style={styles.microwaveFoot}/><View style={styles.microwaveFoot}/></View>}
+  </View>;
+}
+
 function ItemPreview({ item }: { item: DragCatalogItem }) {
   if (item.kind === 'cabinet') return <CabinetPreview item={item}/>;
   if (item.categoryId === 'refrigerators') return <RefrigeratorPreview item={item}/>;
+  if (item.categoryId === 'microwaves') return <MicrowavePreview item={item}/>;
   return <RangePreview item={item}/>;
 }
 
@@ -288,4 +307,19 @@ const styles = StyleSheet.create({
   rangeOven: { flex: 1, borderRadius: 2, backgroundColor: '#C2C7C8', padding: 4 },
   rangeHandle: { height: 3, backgroundColor: '#656C6E', marginBottom: 4 },
   rangeGlass: { flex: 1, backgroundColor: '#202526', borderWidth: 1, borderColor: '#707778' },
+  microwavePreview: { width: '76%', minHeight: '59%', borderRadius: 5, borderWidth: 1, borderColor: '#687274', padding: 4, justifyContent: 'center' },
+  microwaveTopVent: { height: 7, backgroundColor: '#171B1C', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', marginBottom: 2 },
+  microwaveVentSlat: { width: 5, height: 2, backgroundColor: '#737B7D' },
+  microwaveFace: { height: 48, flexDirection: 'row', position: 'relative' },
+  microwaveDoor: { flex: 1, backgroundColor: '#111416', borderWidth: 2, borderColor: '#343A3C', padding: 6 },
+  microwaveMesh: { flex: 1, backgroundColor: '#3A4143', opacity: .78 },
+  microwaveHandle: { position: 'absolute', right: 20, top: 5, width: 4, height: 38, borderRadius: 3, backgroundColor: '#D7DCDE', zIndex: 2 },
+  microwavePanel: { width: 18, backgroundColor: '#101415', padding: 2, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'flex-start', gap: 1 },
+  microwaveDisplay: { width: 14, height: 5, backgroundColor: '#8ED7E8', marginBottom: 2 },
+  microwaveKey: { width: 3, height: 3, borderRadius: 1, backgroundColor: '#737B7D' },
+  microwaveUnderside: { height: 8, backgroundColor: '#282E2F', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
+  microwaveFilter: { width: '37%', height: 4, backgroundColor: '#596264' },
+  microwaveLight: { width: 10, height: 4, backgroundColor: '#F7E7B0' },
+  microwaveFeet: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 6 },
+  microwaveFoot: { width: 9, height: 3, backgroundColor: '#303638' },
 });
