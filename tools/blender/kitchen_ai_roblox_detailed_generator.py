@@ -24,11 +24,16 @@ from __future__ import annotations
 from pathlib import Path
 import json
 import math
+import os
 import traceback
 import bpy
 from mathutils import Vector
 
-OUT = Path.home() / "Documents" / "KitchenAI_Roblox_Exports_Detailed"
+# Override for automation/CI without changing the normal Windows output folder.
+OUT = Path(os.environ.get(
+    "KITCHEN_AI_EXPORT_DIR",
+    str(Path.home() / "Documents" / "KitchenAI_Roblox_Exports_Detailed"),
+)).expanduser()
 IN_PER_STUD = 12.0
 EXPORT_GLB = True
 ADD_SHOWROOM = True
@@ -40,6 +45,9 @@ BACK_IN = 0.25
 FACE_FRAME_IN = 0.75
 FACE_FRAME_WIDTH_IN = 1.5
 DOOR_IN = 0.75
+DOOR_FRAME_WIDTH_IN = 2.25
+DOOR_PANEL_IN = 0.25
+DOOR_REVEAL_IN = 0.125
 DRAWER_SIDE_IN = 0.625
 DRAWER_BOTTOM_IN = 0.25
 DRAWER_DEPTH_IN = 19.625
@@ -144,6 +152,10 @@ def materials():
         "white": make_mat("Appliance Interior", "#EDEDEA", .02, .36),
         "light": make_mat("Warm Light", "#F7E6B0", 0, .15, 1, "#F7E6B0"),
         "floor": make_mat("Showroom Floor", "#CBD3D1", 0, .76),
+        "chrome": make_mat("Polished Chrome", "#DDE4E6", .96, .12),
+        "aluminum": make_mat("Extruded Aluminum", "#889397", .82, .32),
+        "porcelain": make_mat("Porcelain Enamel", "#17191C", .22, .18),
+        "gasket": make_mat("Door Gasket", "#232526", 0, .90),
     }
 
 
@@ -222,6 +234,39 @@ def add_face_frame(root, col, m, w, d, h, bottom=0.0, top=None):
     box("FaceFrame_BottomRail", (w - 2 * stile, frame_t, stile), (0, y, bottom + stile / 2), m["cab"], col, root)
 
 
+def add_frame_rail(root, col, m, w, d, z, name="FaceFrame_MidRail"):
+    """Add a real face-frame cross rail between openings."""
+    stile = s(FACE_FRAME_WIDTH_IN)
+    frame_t = s(FACE_FRAME_IN)
+    y = -d / 2 - frame_t / 2
+    return box(name, (w - 2 * stile, frame_t, stile), (0, y, z), m["cab"], col, root, .006)
+
+
+def add_shaker_panel(root, col, m, name, x, y, z, width, height,
+                     panel_mat=None, glass=False, bevel=.008):
+    """Build a true five-piece Shaker front rather than a beveled slab."""
+    thickness = s(DOOR_IN)
+    frame = min(s(DOOR_FRAME_WIDTH_IN), width * .22, height * .22)
+    panel_t = s(DOOR_PANEL_IN)
+    inner_w = max(s(.5), width - 2 * frame)
+    inner_h = max(s(.5), height - 2 * frame)
+    box(f"{name}_LeftStile", (frame, thickness, height),
+        (x - width / 2 + frame / 2, y, z), m["cab"], col, root, bevel)
+    box(f"{name}_RightStile", (frame, thickness, height),
+        (x + width / 2 - frame / 2, y, z), m["cab"], col, root, bevel)
+    box(f"{name}_TopRail", (inner_w, thickness, frame),
+        (x, y, z + height / 2 - frame / 2), m["cab"], col, root, bevel)
+    box(f"{name}_BottomRail", (inner_w, thickness, frame),
+        (x, y, z - height / 2 + frame / 2), m["cab"], col, root, bevel)
+    inset_y = y + thickness / 2 - panel_t / 2 + s(.08)
+    material = m["glass"] if glass else (panel_mat or m["cab"])
+    panel = box(f"{name}_{'Glass' if glass else 'RecessedPanel'}",
+                (inner_w + s(.12), panel_t, inner_h + s(.12)),
+                (x, inset_y, z), material, col, root, .003)
+    panel["Construction"] = "five-piece Shaker; recessed center panel"
+    return panel
+
+
 def add_hinge(root, col, m, x, y, z, side=1):
     cup_r = s(HINGE_CUP_DIA_IN) / 2
     cup_d = s(HINGE_CUP_DEPTH_IN)
@@ -260,7 +305,10 @@ def cabinet_shell(root, col, m, w, d, h, toe=False):
         box("RearStretcher", (w - 2 * side, s(3), shelf), (0, d / 2 - back - s(1.5), h - shelf / 2), m["wood"], col, root)
     box("Back_1quarter", (w - 2 * side, back, body_h), (0, d / 2 - back / 2, toe_h + body_h / 2), m["edge"], col, root, .004)
     if toe:
-        box("ToeKick", (w, s(.75), toe_h), (0, -d / 2 + toe_recess, toe_h / 2), m["cab"], col, root, .006)
+        box("ToeKickSkin", (w, s(.25), toe_h), (0, -d / 2 + toe_recess, toe_h / 2), m["cab"], col, root, .004)
+        for x in (-w / 2 + side / 2, w / 2 - side / 2):
+            box("ToeKickSide", (side, toe_recess, toe_h),
+                (x, -d / 2 + toe_recess / 2, toe_h / 2), m["wood"], col, root, .004)
         box("ToeFloor", (w - 2 * side, d - toe_recess, s(.5)), (0, toe_recess / 2, s(.25)), m["wood"], col, root, .004)
 
 
@@ -276,21 +324,23 @@ def add_shelf(root, col, m, w, d, z, label="Shelf"):
 
 def add_door_pair(root, col, m, w, d, bottom, top, glass=False):
     frame = s(FACE_FRAME_WIDTH_IN)
-    gap = s(.125)
+    gap = s(DOOR_REVEAL_IN)
     door_t = s(DOOR_IN)
-    face_h = top - bottom - s(.25)
-    inner_w = w - 2 * frame - gap
+    face_h = top - bottom - 2 * gap
+    inner_w = w - 2 * frame - 2 * gap
     count = 1 if inner_w < s(18) else 2
     each = (inner_w - gap * (count - 1)) / count
     y = -d / 2 - s(FACE_FRAME_IN) - door_t / 2
     for i in range(count):
         x = -inner_w / 2 + each / 2 + i * (each + gap)
-        mat = m["glass"] if glass else m["cab"]
-        box(f"Door_{i+1}", (each, door_t, face_h), (x, y, bottom + s(.125) + face_h / 2), mat, col, root, .012)
+        zc = bottom + gap + face_h / 2
+        add_shaker_panel(root, col, m, f"Door_{i+1}", x, y, zc, each, face_h, glass=glass)
         handle_x = x + (each * .36 if i == 0 else -each * .36)
-        add_handle(root, col, m, handle_x, y - s(.35), bottom + face_h * .55, 5.0, True)
+        add_handle(root, col, m, handle_x, y - s(.35), zc, min(8.0, max(4.0, face_h * 12 * .30)), True)
         hinge_x = x - each * .42 if i == 0 else x + each * .42
-        for z in (bottom + face_h * .22, bottom + face_h * .78):
+        hinge_levels = (.16, .50, .84) if face_h > s(48) else (.22, .78)
+        for frac in hinge_levels:
+            z = zc - face_h / 2 + face_h * frac
             add_hinge(root, col, m, hinge_x, y + door_t / 2, z, -1 if i == 0 else 1)
 
 
@@ -312,7 +362,8 @@ def add_drawer_box(root, col, m, w, d, z, face_h, index):
     for x in (-box_w / 2 - slide_t / 2, box_w / 2 + slide_t / 2):
         box(f"Drawer{index}_Slide", (slide_t, box_d, slide_h), (x, y, z - box_h * .25), m["steel"], col, root, .003)
     face_y = -d / 2 - s(FACE_FRAME_IN) - front_t / 2
-    box(f"Drawer{index}_Face", (w - s(3.25), front_t, face_h), (0, face_y, z), m["cab"], col, root, .012)
+    add_shaker_panel(root, col, m, f"Drawer{index}_Face", 0, face_y, z,
+                     w - s(3.25), face_h)
     add_handle(root, col, m, 0, face_y - s(.35), z + face_h * .15, min(8.0, max(4.0, w * 12 * .35)), False)
 
 
@@ -327,6 +378,7 @@ def build_cabinet(kind, root, col, m, w, d, h):
         drawer_h = s(6.25)
         drawer_z = h - drawer_h / 2 - s(1.75)
         add_drawer_box(root, col, m, w, d, drawer_z, drawer_h, 1)
+        add_frame_rail(root, col, m, w, d, h - drawer_h - s(1.35), "DrawerDividerRail")
         add_door_pair(root, col, m, w, d, bottom + s(1.5), h - drawer_h - s(2.1), False)
 
     elif kind == "drawers":
@@ -341,7 +393,10 @@ def build_cabinet(kind, root, col, m, w, d, h):
     elif kind == "sink":
         false_h = s(6.25)
         face_y = -d / 2 - s(FACE_FRAME_IN) - s(DOOR_IN) / 2
-        box("SinkFalseFront", (w - s(3.25), s(DOOR_IN), false_h), (0, face_y, h - false_h / 2 - s(1.75)), m["cab"], col, root, .012)
+        false_z = h - false_h / 2 - s(1.75)
+        add_shaker_panel(root, col, m, "SinkFalseFront", 0, face_y, false_z,
+                         w - s(3.25), false_h)
+        add_frame_rail(root, col, m, w, d, h - false_h - s(1.25), "SinkDividerRail")
         add_door_pair(root, col, m, w, d, bottom + s(1.5), h - false_h - s(2.0), False)
         box("SinkPlumbingVoid", (w - s(4), d - s(4), s(8)), (0, s(1), bottom + s(8)), m["edge"], col, root, .002)
 
@@ -367,11 +422,16 @@ def build_cabinet(kind, root, col, m, w, d, h):
         add_door_pair(root, col, m, w, d, bottom + s(1.5), h * .36, False)
         oven_bottom = h * .40
         oven_h = s(30)
+        add_frame_rail(root, col, m, w, d, oven_bottom - s(.75), "OvenLowerRail")
+        add_frame_rail(root, col, m, w, d, oven_bottom + oven_h + s(.75), "OvenUpperRail")
+        box("OvenSupportDeck", (w - s(3), d - s(1), s(.75)), (0, s(.25), oven_bottom), m["wood"], col, root, .006)
         box("OvenCavity", (w - s(3), d - s(2), oven_h), (0, 0, oven_bottom + oven_h / 2), m["black"], col, root, .01)
         for zoff in (s(7), s(15), s(23)):
             box("OvenRack", (w - s(6), d - s(5), s(.18)), (0, -s(.2), oven_bottom + zoff), m["steel"], col, root, .002)
         face_y = -d / 2 - s(1.2)
         box("OvenDoorGlass", (w - s(3), s(.75), s(24)), (0, face_y, oven_bottom + oven_h * .50), m["black"], col, root, .015)
+        box("OvenControlPanel", (w - s(3), s(.82), s(4.25)), (0, face_y, oven_bottom + oven_h - s(2.25)), m["steel"], col, root, .008)
+        box("OvenDisplay", (s(5.5), s(.12), s(1.3)), (0, face_y - s(.48), oven_bottom + oven_h - s(2.25)), m["screen"], col, root, .003)
         add_handle(root, col, m, 0, face_y - s(.4), oven_bottom + oven_h * .82, min(20, w * 12 - 8), False)
         add_door_pair(root, col, m, w, d, oven_bottom + oven_h + s(2), h - s(1.5), False)
 
@@ -380,6 +440,8 @@ def build_cabinet(kind, root, col, m, w, d, h):
         box("RightEndPanel", (s(.75), d, h - bottom), (w / 2 - s(.375), 0, bottom + (h - bottom) / 2), m["cab"], col, root)
         bridge_bottom = h - s(18)
         box("BridgeBottom", (w - s(1.5), d, s(.75)), (0, 0, bridge_bottom), m["wood"], col, root)
+        box("FridgeOpeningBackRail", (w - s(3), s(.75), s(3)), (0, d / 2 - s(.5), bridge_bottom - s(1.5)), m["wood"], col, root)
+        add_frame_rail(root, col, m, w, d, bridge_bottom, "BridgeFaceRail")
         add_door_pair(root, col, m, w, d, bridge_bottom + s(1.5), h - s(1.5), False)
 
 
@@ -402,6 +464,11 @@ def build_fridge(kind, root, col, m, w, d, h):
     box("TopCabinetWall", (interior_w, d, wall), (0, 0, h - wall / 2), steel, col, root)
     box("BackCabinetWall", (interior_w, back, body_h), (0, d / 2 - back / 2, body_bottom + body_h / 2), steel, col, root)
     box("InteriorLiner", (interior_w, interior_d, body_h - s(1.5)), (0, s(.3), body_bottom + body_h / 2), m["white"], col, root, .008)
+    box("CompressorCover", (interior_w * .70, s(2.0), s(7.0)),
+        (0, d / 2 - s(1.25), s(4.0)), m["dark"], col, root, .012)
+    for i in range(9):
+        box(f"LowerVent_{i+1}", (interior_w * .70, s(.18), s(.16)),
+            (0, -d / 2 - s(.08), s(.7 + i * .32)), m["dark"], col, root, .001)
     add_leveling_feet(root, col, m, w, d)
 
     y = -d / 2 - s(.45)
@@ -410,6 +477,8 @@ def build_fridge(kind, root, col, m, w, d, h):
         upper_h = h - lower_h - s(.5)
         box("FreshFoodDoor", (w - s(.4), s(1.1), lower_h), (0, y, lower_h / 2 + s(.4)), steel, col, root, .025)
         box("FreezerDoor", (w - s(.4), s(1.1), upper_h), (0, y, lower_h + upper_h / 2), steel, col, root, .025)
+        box("FreshFoodGasket", (w - s(1.1), s(.16), lower_h - s(.8)), (0, y + s(.58), lower_h / 2 + s(.4)), m["gasket"], col, root, .004)
+        box("FreezerGasket", (w - s(1.1), s(.16), upper_h - s(.8)), (0, y + s(.58), lower_h + upper_h / 2), m["gasket"], col, root, .004)
         add_handle(root, col, m, -w * .28, y - s(.7), lower_h * .58, 8, False)
         add_handle(root, col, m, -w * .28, y - s(.7), lower_h + upper_h * .55, 7, False)
         for z in (lower_h * .20, lower_h * .42, lower_h * .64):
@@ -420,15 +489,23 @@ def build_fridge(kind, root, col, m, w, d, h):
         fresh_h = h - fresh_bottom - s(.5)
         for i, x in enumerate((-w / 4, w / 4)):
             box(f"FrenchDoor_{i+1}", (w / 2 - s(.22), s(1.0), fresh_h), (x, y, fresh_bottom + fresh_h / 2), steel, col, root, .022)
+            box(f"FrenchDoorGasket_{i+1}", (w / 2 - s(.82), s(.14), fresh_h - s(.7)),
+                (x, y + s(.53), fresh_bottom + fresh_h / 2), m["gasket"], col, root, .003)
             add_handle(root, col, m, x + (s(2.2) if i == 0 else -s(2.2)), y - s(.65), fresh_bottom + fresh_h * .55, 18, True)
             for z in (fresh_bottom + fresh_h * .18, fresh_bottom + fresh_h * .82):
                 add_hinge(root, col, m, x + (-w * .22 if i == 0 else w * .22), y + s(.4), z, -1 if i == 0 else 1)
         box("FreezerDrawerFace", (w - s(.5), s(1.0), freezer_h - s(.4)), (0, y, freezer_h / 2), steel, col, root, .022)
+        box("FreezerBasket", (interior_w - s(1.2), interior_d - s(4), freezer_h * .48),
+            (0, s(.35), freezer_h * .42), m["aluminum"], col, root, .006)
         add_handle(root, col, m, 0, y - s(.65), freezer_h * .72, min(24, w * 12 - 8), False)
         for z in (fresh_bottom + fresh_h * .22, fresh_bottom + fresh_h * .45, fresh_bottom + fresh_h * .68):
             box("GlassShelf", (interior_w - s(1), interior_d - s(2), s(.22)), (0, s(.4), z), m["glass"], col, root, .003)
         box("CrisperLeft", (interior_w * .46, interior_d * .72, s(7)), (-interior_w * .25, s(.5), fresh_bottom + s(4.5)), m["glass"], col, root, .006)
         box("CrisperRight", (interior_w * .46, interior_d * .72, s(7)), (interior_w * .25, s(.5), fresh_bottom + s(4.5)), m["glass"], col, root, .006)
+        for i, x in enumerate((-w * .25, w * .25), 1):
+            for frac in (.30, .55, .78):
+                box(f"DoorBin_{i}_{int(frac*100)}", (w * .19, s(3.0), s(4.0)),
+                    (x, -d / 2 + s(2.0), fresh_bottom + fresh_h * frac), m["glass"], col, root, .004)
         if kind == "fridge-smart":
             box("SmartDisplay", (w * .22, s(.18), h * .23), (w * .23, y - s(.62), h * .58), m["screen"], col, root, .006)
         elif kind == "fridge-french":
@@ -448,11 +525,13 @@ def build_range(kind, root, col, m, w, d, h):
     add_leveling_feet(root, col, m, w, d)
     box("RangeBody", (w, d, h - body_bottom), (0, 0, body_bottom + (h - body_bottom) / 2), m["steel"], col, root, .025)
     box("Cooktop", (w, d * .88, s(.75)), (0, -d * .02, h + s(.375)), m["dark"], col, root, .012)
+    box("CooktopFrontTrim", (w, s(.6), s(.55)), (0, -d * .46, h + s(.25)), m["chrome"], col, root, .005)
     griddle = "griddle" in kind
     centers = [(-w * .28, -d * .23), (w * .28, -d * .23), (-w * .28, d * .18), (w * .28, d * .18)]
     for i, (x, y) in enumerate(centers, 1):
         torus(f"BurnerRing_{i}", s(2.1), s(.26), (x, y, h + s(.95)), m["dark"], col, root)
         cylinder(f"BurnerCap_{i}", s(1.25), s(.32), (x, y, h + s(.92)), m["brass"], col, root, vertices=28)
+        cylinder(f"Igniter_{i}", s(.12), s(.38), (x + s(1.45), y, h + s(1.0)), m["white"], col, root, vertices=12)
         add_range_grate(root, col, m, x, y, w * .32, d * .36, h + s(1.25))
     if griddle:
         box("CenterGriddle", (w * .22, d * .66, s(.55)), (0, -d * .02, h + s(.95)), m["dark"], col, root, .01)
@@ -460,6 +539,7 @@ def build_range(kind, root, col, m, w, d, h):
     panel_y = -d / 2 - s(.3)
     panel_h = s(7)
     box("ControlPanel", (w - s(.5), s(.7), panel_h), (0, panel_y, h - panel_h / 2 - s(1)), m["steel"], col, root, .01)
+    box("RangeDisplay", (s(5.5), s(.14), s(1.35)), (0, panel_y - s(.42), h - s(2.0)), m["screen"], col, root, .003)
     knobs = 5 if griddle else 4
     for i in range(knobs):
         x = -w * .36 + i * (w * .72 / max(1, knobs - 1))
@@ -480,6 +560,7 @@ def build_range(kind, root, col, m, w, d, h):
     add_handle(root, col, m, 0, door_y - s(.95), oven_bottom + oven_h * .86, min(24, w * 12 - 8), False)
     for x in (-w * .40, w * .40):
         cylinder("DoorHinge", s(.42), s(1.0), (x, door_y + s(.4), oven_bottom + s(1)), m["steel"], col, root, rot=(math.pi / 2, 0, 0), vertices=18)
+    box("BroilerDrawerFace", (w - s(2), s(.65), s(2.4)), (0, door_y, s(2.0)), m["steel"], col, root, .008)
 
 
 def build_microwave(kind, root, col, m, w, d, h):
@@ -494,6 +575,7 @@ def build_microwave(kind, root, col, m, w, d, h):
     y = -d / 2 - s(.55)
     box("DoorFrame", (door_w, s(1.0), h * .78), (-panel_w / 2, y, h * .52), m["black"], col, root, .018)
     box("DoorWindow", (door_w * .72, s(.16), h * .52), (-panel_w / 2, y - s(.5), h * .52), m["glass"], col, root, .006)
+    box("DoorInnerChoke", (door_w * .88, s(.12), h * .68), (-panel_w / 2, y + s(.53), h * .52), m["gasket"], col, root, .004)
     add_handle(root, col, m, door_w / 2 - panel_w / 2 - s(1.0), y - s(.75), h * .52, min(10, h * 12 * .55), True)
     add_hinge(root, col, m, -w / 2 + s(1.0), y + s(.4), h * .25, -1)
     add_hinge(root, col, m, -w / 2 + s(1.0), y + s(.4), h * .76, -1)
@@ -511,6 +593,12 @@ def build_microwave(kind, root, col, m, w, d, h):
     box("InteriorCavity", (cavity_w, cavity_d, cavity_h), (-panel_w / 2, s(.4), h / 2), m["white"], col, root, .008)
     cylinder("GlassTurntable", min(cavity_w, cavity_d) * .34, s(.18), (-panel_w / 2, s(.1), s(1.25)), m["glass"], col, root, vertices=40)
     cylinder("TurntableHub", s(.42), s(.22), (-panel_w / 2, s(.1), s(1.05)), m["steel"], col, root, vertices=20)
+    for row in range(5):
+        for column in range(8):
+            cylinder(f"CavityVent_{row}_{column}", s(.055), s(.08),
+                     (-panel_w / 2 - cavity_w * .35 + column * cavity_w * .10,
+                      d / 2 - s(.62), h * .68 + row * s(.18)),
+                     m["dark"], col, root, rot=(math.pi / 2, 0, 0), vertices=8)
     if kind == "microwave":
         for x in (-w * .40, w * .40):
             for yy in (-d * .36, d * .36):
@@ -523,6 +611,7 @@ def build_microwave(kind, root, col, m, w, d, h):
             xx = -w * .42 + i * w * .84 / 9
             box(f"FilterSlat_{i}", (s(.10), d * .50, s(.06)), (xx, s(.2), filter_z - s(.12)), m["steel"], col, root, .001)
         box("CooktopLight", (w * .18, d * .14, s(.14)), (0, -d * .31, s(.10)), m["light"], col, root, .003)
+        box("BottomControlStrip", (w * .28, d * .10, s(.12)), (w * .31, -d * .28, s(.11)), m["black"], col, root, .002)
         box("WallMountBracket", (w - s(2), s(.25), h * .58), (0, d / 2 + s(.12), h * .45), m["steel"], col, root, .004)
         box("ExhaustAdapter_3.25x10", (s(10), s(3.25), s(1.5)), (0, s(.5), h + s(.75)), m["steel"], col, root, .006)
         for i in range(12):
