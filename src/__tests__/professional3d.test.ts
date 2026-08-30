@@ -32,8 +32,8 @@ describe('professional dollhouse 3D',()=>{
     const visit=professionalCameraForView(project,'visit',viewport);
     const wall=professionalCameraForView(project,'wall',viewport);
     const top=professionalCameraForView(project,'top',viewport);
-    expect(dollhouse.yaw).toBe(42);
-    expect(dollhouse.pitch).toBe(48);
+    expect(dollhouse.yaw).toBe(-42);
+    expect(dollhouse.pitch).toBe(36);
     expect(top.pitch).toBe(76);
     expect(visit.pitch).toBeLessThan(20);
     expect(wall.pitch).toBeLessThan(12);
@@ -49,12 +49,12 @@ describe('professional dollhouse 3D',()=>{
     const project=createLuisTenByElevenKitchen();
     const scene=buildProfessional3DScene(project);
     const walls=scene.boxes.filter(box=>box.surface==='wall');
-    const opacities=walls.map(box=>professionalWallOpacity(box,42,'dollhouse',scene.sceneCenter));
+    const opacities=walls.map(box=>professionalWallOpacity(box,-42,'dollhouse',scene.sceneCenter));
     expect(opacities.some(value=>value<.5)).toBe(true);
     expect(opacities.some(value=>value>.8)).toBe(true);
     const north=walls.find(box=>box.roomSide==='north');
     const south=walls.find(box=>box.roomSide==='south');
-    expect(north&&professionalWallOpacity(north,42,'dollhouse',scene.sceneCenter)).toBeGreaterThan(.8);
-    expect(south&&professionalWallOpacity(south,42,'dollhouse',scene.sceneCenter)).toBeLessThan(.5);
+    expect(north&&professionalWallOpacity(north,-42,'dollhouse',scene.sceneCenter)).toBeGreaterThan(.8);
+    expect(south&&professionalWallOpacity(south,-42,'dollhouse',scene.sceneCenter)).toBeLessThan(.5);
   });
 });
