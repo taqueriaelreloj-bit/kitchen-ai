@@ -322,9 +322,12 @@ export function professionalCameraForView(
   };
   return {
     ...fitted,
-    yaw: 42,
-    pitch: 48,
-    distance: clamp(fitted.distance * .78, 230, 1100),
+    // Open dollhouse views from the front-left. The previous positive
+    // yaw placed tall appliances closest to the camera, hiding the
+    // cabinet run and making an ordered kitchen look cluttered.
+    yaw: -42,
+    pitch: 36,
+    distance: clamp(fitted.distance * .82, 230, 1100),
   };
 }
 
