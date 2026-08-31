@@ -1,0 +1,27 @@
+name: Apply Save Status UI
+
+on:
+  push:
+    branches: [feature/save-status]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, 'Wire save status') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/save-status
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13
+      - run: node scripts/apply-save-status-ui.mjs
+      - run: |
+          git config user.name "Kitchen AI Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Wire save status into editors"
+          git push origin HEAD:feature/save-status
