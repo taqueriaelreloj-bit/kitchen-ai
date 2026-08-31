@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Camera3DState, clampZoom, EditorObject, EditorProject, updateObject, View2DState } from '../domain/editor';
+import { NativeSelectableGLViewport } from './NativeSelectableGLViewport.native';
 
 const GRID_SPACING_IN=12;
 const PLAN_SCALE=.38;
@@ -72,8 +73,10 @@ export function NativeWorkspace({project,apply}:Props){
   }),[project,apply]);
 
   if(project.viewMode==='3d'){
-    const scale=Math.max(.55,Math.min(1.35,520/visual3d.distance)),translateX=(220-visual3d.target.x)*.12,translateY=(170-visual3d.target.y)*.08;
-    return <View accessibilityLabel="3D kitchen touch preview" style={s.workspace} {...responder.panHandlers}><View style={s.previewHeader}><Text style={s.previewTitle}>3D Project Preview</Text><Text style={s.gestureHint}>Pinch to zoom · Two-finger drag to pan</Text></View><View style={s.previewStage}><View style={[s.previewFloor,{transform:[{translateX},{translateY},{scale}]}]}>{project.objects.filter(object=>object.kind!=='wall').slice(0,28).map((object,index)=><Pressable key={object.id} accessibilityRole="button" accessibilityLabel={object.name} onPress={()=>apply({...project,selectedId:object.id},false)} style={[s.previewBlock,{width:Math.max(22,Math.min(88,object.widthIn)),height:Math.max(14,Math.min(70,object.heightIn*.52)),backgroundColor:object.color??'#D5D2CA',marginLeft:(index%4)*4},project.selectedId===object.id&&s.selected]}><Text numberOfLines={1} style={s.previewLabel}>{object.name}</Text></Pressable>)}</View></View></View>;
+    return <View accessibilityLabel="3D kitchen touch workspace" style={s.workspace} {...responder.panHandlers}>
+      <View style={s.previewHeader}><Text style={s.previewTitle}>3D Kitchen</Text><Text style={s.gestureHint}>Pinch to zoom · Two-finger drag to pan · Use Properties to edit selection</Text></View>
+      <NativeSelectableGLViewport project={project} camera={visual3d} onSelect={id=>apply({...project,selectedId:id},false)}/>
+    </View>;
   }
 
   const gridLines=project.view2d.grid?Array.from({length:30},(_,index)=>index):[];
